@@ -97,6 +97,14 @@ static void DoBeforeEachAction();
 "if" { return T_If; }
 "else" { return T_Else; }
 "break" { return T_Break; }
+"++" { return T_Inc; }
+"--" { return T_Dec; }
+"<=" { return T_LessEqual; }
+">=" { return T_GreaterEqual; }
+"==" { return T_Equal; }
+"!=" { return T_NotEqual; }
+"&&" { return T_And; }
+"||" { return T_Or; }
 
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
