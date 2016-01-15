@@ -16,7 +16,7 @@
 #include "utility.h" // for PrintDebug()
 #include "errors.h"
 
-int current_column = 1, current_line = 1;
+int current_column = 1;
 
 /* Global variable: yylval
  * -----------------------
@@ -64,6 +64,7 @@ SYNTAX_FLOAT ([0-9]+[.][0-9]*[f]?)|([0-9]*[.][0-9]+[f]?)
  /* All patterns and actions should be placed between the start and stop
   * %% markers which delimit the Rules section. 
   */
+"void" { return T_Void; }
 "const" { return T_Const; }
 "uniform" { return T_Uniform; }
 "layout" { return T_Layout; }
@@ -101,6 +102,7 @@ SYNTAX_FLOAT ([0-9]+[.][0-9]*[f]?)|([0-9]*[.][0-9]+[f]?)
 "if" { return T_If; }
 "else" { return T_Else; }
 "break" { return T_Break; }
+"struct" { return T_Struct; }
 "++" { return T_Inc; }
 "--" { return T_Dec; }
 "<=" { return T_LessEqual; }
@@ -122,19 +124,20 @@ SYNTAX_FLOAT ([0-9]+[.][0-9]*[f]?)|([0-9]*[.][0-9]+[f]?)
     return T_Identifier;
   }
   else {
-    // Throw LongIdentifier Error
+    ReportError::LongIdentifier(&yylloc,yytext);
   }
 }
 "//".*\n { ++yylloc.first_line; ++yylloc.last_line; current_column = 1; }
 "/*" { BEGIN(COMMENT); }
 <COMMENT>\n { ++yylloc.last_line; current_column = 1; }
 <COMMENT>"*/" { BEGIN(0); yylloc.first_line = yylloc.last_line; }
+<COMMENT><<EOF>> { ReportError::UntermComment(); }
 <COMMENT>. { }
 \n { ++yylloc.first_line; ++yylloc.last_line; current_column = 1; }
 \t { current_column += 7; }
 " " { }
 [\+\-\*\/\%\<\>\=\!\;\,\.\[\]\(\)\{\}] { return yytext[0]; }
-. { }
+. { ReportError::UnrecogChar(&yylloc,yytext[0]); }
 
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
@@ -162,6 +165,7 @@ void InitScanner()
     yy_flex_debug = false;
 
     yylloc.first_line = 1;
+    yylloc.last_line = 1;
 }
 
 
