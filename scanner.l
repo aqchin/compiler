@@ -16,6 +16,8 @@
 #include "utility.h" // for PrintDebug()
 #include "errors.h"
 
+int current_column = 1, current_line = 1;
+
 /* Global variable: yylval
  * -----------------------
  * This global variable is how we get attribute information about the token
@@ -56,10 +58,12 @@ static void DoBeforeEachAction();
   */
 SYNTAX_FLOAT ([0-9]+[.][0-9]*[f]?)|([0-9]*[.][0-9]+[f]?)
 
+%x COMMENT
+
 %%             /* BEGIN RULES SECTION */
  /* All patterns and actions should be placed between the start and stop
   * %% markers which delimit the Rules section. 
-  */ 
+  */
 "const" { return T_Const; }
 "uniform" { return T_Uniform; }
 "layout" { return T_Layout; }
@@ -121,8 +125,16 @@ SYNTAX_FLOAT ([0-9]+[.][0-9]*[f]?)|([0-9]*[.][0-9]+[f]?)
     // Throw LongIdentifier Error
   }
 }
+"//".*\n { ++yylloc.first_line; ++yylloc.last_line; current_column = 1; }
+"/*" { BEGIN(COMMENT); }
+<COMMENT>\n { ++yylloc.last_line; current_column = 1; }
+<COMMENT>"*/" { BEGIN(0); yylloc.first_line = yylloc.last_line; }
+<COMMENT>. { }
+\n { ++yylloc.first_line; ++yylloc.last_line; current_column = 1; }
+\t { current_column += 7; }
+" " { }
 [\+\-\*\/\%\<\>\=\!\;\,\.\[\]\(\)\{\}] { return yytext[0]; }
-
+. { }
 
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
@@ -148,6 +160,8 @@ void InitScanner()
 {
     PrintDebug("lex", "Initializing scanner");
     yy_flex_debug = false;
+
+    yylloc.first_line = 1;
 }
 
 
@@ -158,4 +172,7 @@ void InitScanner()
  */
 static void DoBeforeEachAction()
 {
+ yylloc.first_column = current_column;
+ yylloc.last_column = yylloc.first_column + yyleng - 1;
+ current_column += yyleng;
 }
