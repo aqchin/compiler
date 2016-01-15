@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #define MaxIdentLen 31    // Maximum length for identifiers
+#define GLSLMaxIdentLen 1023
 
   
 /* Typedef: TokenType enum

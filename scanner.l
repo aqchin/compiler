@@ -54,7 +54,7 @@ static void DoBeforeEachAction();
   * as a simple substitution mechanism that allows for more readable
   * entries in the Rules section later. 
   */
-
+SYNTAX_FLOAT ([0-9]+[.][0-9]*[f]?)|([0-9]*[.][0-9]+[f]?)
 
 %%             /* BEGIN RULES SECTION */
  /* All patterns and actions should be placed between the start and stop
@@ -71,8 +71,8 @@ static void DoBeforeEachAction();
 "in" { return T_In; }
 "out" { return T_Out; }
 "inout" { return T_InOut; }
-"true" { return T_True; }
-"false" { return T_False; }
+"true" { yylval.boolConstant = 1; return T_BoolConstant; }
+"false" { yylval.boolConstant = 0; return T_BoolConstant; }
 "mat2" { return T_Mat2; }
 "mat3" { return T_Mat3; }
 "mat4" { return T_Mat4; }
@@ -105,6 +105,24 @@ static void DoBeforeEachAction();
 "!=" { return T_NotEqual; }
 "&&" { return T_And; }
 "||" { return T_Or; }
+"[]" { return T_Dims; }
+[0-9]+ { yylval.integerConstant = strtol(yytext, NULL, 10); return T_IntConstant; }
+{SYNTAX_FLOAT} { yylval.floatConstant = strtod(yytext, NULL); return T_FloatConstant; }
+[a-zA-Z_][a-zA-Z0-9_]* { 
+  if(yyleng <= MaxIdentLen) {
+    strcpy(yylval.identifier, yytext);
+    return T_Identifier;
+  }
+  else if(yyleng <= GLSLMaxIdentLen) {
+    strncpy(yylval.identifier, yytext, MaxIdentLen);
+    return T_Identifier;
+  }
+  else {
+    // Throw LongIdentifier Error
+  }
+}
+[\+\-\*\/\%\<\>\=\!\;\,\.\[\]\(\)\{\}] { return yytext[0]; }
+
 
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
