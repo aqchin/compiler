@@ -1,0 +1,37 @@
+[ Project 0 or 1 idk README ]
+
+[ TEAM ]
+Hubert Hsiung, A10795582
+Alan Chin, A10843563
+
+[ HIGH LEVEL OVERVIEW ]
+At its current state, our program is capable of recognizing certain all
+provided keywords that were specified in the GLSL documentation (the 
+highlighted ones), as well as some of the ones that came in the starter
+code.
+
+Some things we noticed that were quite challenging was constructing some
+of the regular expressions. For example, it took quite a bit of thought
+to construct a sufficient expression for the 'float' type. Additionally,
+we found the instructions to be a little vague which caused a lot of
+confusion when working on the project.
+
+For the design decisions, we elected to follow the advice of our fellow
+peers who posted on Piazza. For example, we were unsure of how to handle
+and integer with a minus sign in front of it. Looking at Piazza 
+(piazza.com/class/ihrbfc16rae4j0?cid=119), we determined that GLSL does not
+store negative numbers in the integer constant. Instead we recognize the
+symbol as an operator, and the number as a positive number.
+
+We believe our program is correct and robust because of how closely we
+followed the detailed instruction the professor provided in lecture, through
+his posts on Piazza, as well as the 'samples' tests that were provided.
+
+With our hard work and dedication, we hope to receive a high deserving grade
+in this assignment. In terms of error handling, we throw three different
+errors: one for identifier length exceeding 1023; one for an unclosed
+multi-line comment; and finally one for unrecognized characters. One thing
+to note, we did not add the string terminating error because we are not
+dealing with strings in this assignment (thankfully). :)
+
+[ END OF README ]
