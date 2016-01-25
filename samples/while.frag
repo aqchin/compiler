@@ -1,3 +1,0 @@
-while ( ip < z )
-   ++ip;
-
