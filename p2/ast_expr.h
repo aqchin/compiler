@@ -19,6 +19,16 @@ class Type; // for NewArray
 
 void yyerror(const char *msg);
 
+class VarExpr : public Expr
+{
+  protected:
+    Identifier *id;
+  public:
+    VarExpr(yyltype loc, Identifier *ident);
+    const char *GetPrintNameForNode() { return "VarExpr"; }
+    void PrintChildren(int identLevel);
+};
+
 class Expr : public Stmt 
 {
   public:

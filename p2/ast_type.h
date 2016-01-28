@@ -20,7 +20,10 @@ class Type : public Node
 
   public :
     static Type *intType, *doubleType, *boolType, *voidType,
-                *nullType, *stringType, *errorType;
+                *nullType, *stringType, *errorType,
+                *vec2Type, *vec3Type, *vec4Type,
+                *mat2Type, *mat3Type, *mat4Type,
+                *floatType, *intType;
 
     Type(yyltype loc) : Node(loc) {}
     Type(const char *str);

@@ -8,6 +8,13 @@
 #include "ast_type.h"
 #include "ast_decl.h"
 
+VarExpr::VarExpr(yyltype loc, Identifier *ident) : Expr(loc) {
+  id = ident;
+}
+
+void VarExpr::PrintChildren(int identLevel) {
+  id->Print(identLevel + 1);
+}
 
 IntConstant::IntConstant(yyltype loc, int val) : Expr(loc) {
     value = val;
