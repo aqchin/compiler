@@ -113,22 +113,22 @@ DeclList  :    DeclList Decl        { ($$=$1)->Append($2); }
 Var_Ident :    T_Identifier { }
 	  ;
 
-Prim_Expr :    Var_Ident { $$=$1; }
-          |    T_IntConstant { $$=$1; }
-          |    T_FloatConstant { $$=$1; }
-          |    T_BoolConstant { $$=$1; }
-          |    '(' Expr ')' { $$=$2; }
+Prim_Expr :    Var_Ident { }
+          |    T_IntConstant { }
+          |    T_FloatConstant { }
+          |    T_BoolConstant { }
+          |    '(' Expr ')' { }
           ;
 
-Post_Expr :    Prim_Expr { $$=$1; }
-	  |    Post_Expr '[' Int_Expr ']' { $$=$1; }
-          |    Fn_Call { $$=$1; }
-          |    Post_Expr '.' T_Field_Selection { $$=$1; }
-          |    Post_Expr T_Inc { $$=$1; }
-          |    Post_Expr T_Dec { $$=$1; }
+Post_Expr :    Prim_Expr { }
+	  |    Post_Expr '[' Int_Expr ']' { }
+          |    Fn_Call { }
+          |    Post_Expr '.' T_Field_Selection { }
+          |    Post_Expr T_Inc { }
+          |    Post_Expr T_Dec { }
           ;
 
-Int_Expr  :    Expr { $$=$1; }
+Int_Expr  :    Expr { }
           ;
 
 Fn_Call   :    Fn_Call_Hdr_Param ')' { }
@@ -364,16 +364,16 @@ Init      :    Assign_Expr { }
 Decl_Stmt :    Decl { }
           ;
 
-Stmt      :    Comp_Stmt_Scope { $$ = $1; }
-          |    Simp_Stmt { $$ = $1; }
+Stmt      :    Comp_Stmt_Scope { }
+          |    Simp_Stmt { }
           ;
 
-Stmt_No_Scope  : Comp_Stmt_No_Scope { $$ = $1; }
-	       | Simp_Stmt { $$ = $1; }
+Stmt_No_Scope  : Comp_Stmt_No_Scope { }
+	       | Simp_Stmt { }
 	       ;
 
-Stmt_Scope     : Comp_Stmt_No_Scope { $$ = $1; }
-	       | Simp_Stmt { $$ = $1; }
+Stmt_Scope     : Comp_Stmt_No_Scope { }
+	       | Simp_Stmt { }
 	       ;
 
 Simp_Stmt    :    Decl_Stmt { }
