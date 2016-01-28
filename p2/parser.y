@@ -64,7 +64,7 @@ void yyerror(const char *msg); // standard error-handling routine
 %token   T_UInt T_BVec2 T_BVec3 T_BVec4 T_IVec2 T_IVec3 T_IVec4
 %token   T_UVec2 T_UVec3 T_UVec4 T_Vec2 T_Vec3 T_Vec4 T_Struct
 %token   T_In T_Out T_InOut T_Const T_Uniform T_Layout T_Continue
-%token   T_Do T_Type_Name T_Field_Selection
+%token   T_Do T_Type_Name T_Field_Selection T_Mat2 T_Mat3 T_Mat4
 %token   T_Mul_Assign T_Div_Assign T_Add_Assign T_Sub_Assign
 
 %token   <identifier> T_Identifier
@@ -110,7 +110,10 @@ DeclList  :    DeclList Decl        { ($$=$1)->Append($2); }
           |    Decl                 { ($$ = new List<Decl*>)->Append($1); }
           ;
 
-Prim_Expr :    T_Identifier { $$=$1; }
+Var_Ident :    T_Identifier { }
+	  ;
+
+Prim_Expr :    Var_Ident { $$=$1; }
           |    T_IntConstant { $$=$1; }
           |    T_FloatConstant { $$=$1; }
           |    T_BoolConstant { $$=$1; }
@@ -118,7 +121,7 @@ Prim_Expr :    T_Identifier { $$=$1; }
           ;
 
 Post_Expr :    Prim_Expr { $$=$1; }
-          |    Post_Expr '[' Int_Expr ']' { $$=$1; }
+	  |    Post_Expr '[' Int_Expr ']' { $$=$1; }
           |    Fn_Call { $$=$1; }
           |    Post_Expr '.' T_Field_Selection { $$=$1; }
           |    Post_Expr T_Inc { $$=$1; }
@@ -182,12 +185,24 @@ Eq_Expr   :    Rela_Expr { }
           |    Eq_Expr T_NotEqual Rela_Expr { }
           ;
 
-Log_And_Expr  :    Eq_Expr { }
-              |    Log_And_Expr T_And Eq_Expr { }
+And_Expr  :    Eq_Expr { }
+	  ;
+
+Excl_Or_Expr  :    And_Expr { }
+	      ;
+
+Incl_Or_Expr  :    Excl_Or_Expr { }
+	      ;
+
+Log_And_Expr  :    Incl_Or_Expr { }
+              |    Log_And_Expr T_And Incl_Or_Expr { }
               ;
 
-Log_Or_Expr   :    Log_And_Expr { }
-              |    Log_Or_Expr T_Or Log_And_Expr { }
+Log_Xor_Expr  :    Log_And_Expr { }
+	      ;
+
+Log_Or_Expr   :    Log_Xor_Expr { }
+              |    Log_Or_Expr T_Or Log_Xor_Expr { }
               ;
 
 Cond_Expr :    Log_Or_Expr { }
@@ -349,11 +364,19 @@ Init      :    Assign_Expr { }
 Decl_Stmt :    Decl { }
           ;
 
-Stmt      :    Comp_Stmt { $$ = $1; }
+Stmt      :    Comp_Stmt_Scope { $$ = $1; }
           |    Simp_Stmt { $$ = $1; }
           ;
 
-Simple_Stmt    :    Decl_Stmt { }
+Stmt_No_Scope  : Comp_Stmt_No_Scope { $$ = $1; }
+	       | Simp_Stmt { $$ = $1; }
+	       ;
+
+Stmt_Scope     : Comp_Stmt_No_Scope { $$ = $1; }
+	       | Simp_Stmt { $$ = $1; }
+	       ;
+
+Simp_Stmt    :    Decl_Stmt { }
                |    Expr_Stmt { }
                |    Sel_Stmt { }
                |    Swi_Stmt { }
@@ -362,9 +385,13 @@ Simple_Stmt    :    Decl_Stmt { }
                |    Jump_Stmt { }
                ;
 
-Comp_Stmt :    '{' '}' { }
-          |    '{' StmtList '}' { }
-          ;
+Comp_Stmt_Scope    : '{' '}' { }
+                   | '{' StmtList '}' { }
+                   ;
+
+Comp_Stmt_No_Scope : '{' '}' {}
+		   | '{' StmtList '}' { }
+		   ;
 
 StmtList  :    Stmt { }
           |    StmtList Stmt { }
@@ -377,8 +404,8 @@ Expr_Stmt :   ';' { }
 Sel_Stmt  :    T_If '(' Expr ')' Sel_Rest_Stmt { }
           ;
 
-Sel_Rest_Stmt  :    Stmt T_Else Stmt { }
-               |    Stmt { }
+Sel_Rest_Stmt  :    Stmt_Scope T_Else Stmt_Scope { }
+               |    Stmt_Scope { }
                ;
 
 Cond      :    Expr { }
@@ -397,15 +424,18 @@ Case_Lbl  :    T_Case Expr ':' { }
 
 Iter_Stmt :    T_While '(' Cond ')' Stmt { }
           |    T_Do Stmt T_While '(' Expr ')' ';' { }
-          |    T_For '(' For_Init_Stmt For_Rest_stmt ')' Stmt { }
+          |    T_For '(' For_Init_Stmt For_Rest_Stmt ')' Stmt_No_Scope { }
           ;
 
 For_Init_Stmt  :    Expr_Stmt { }
                |    Decl_Stmt { }
                ;
 
-For_Rest_Stmt  :    Cond ';' { }
-               |    Cond ';' Expr { }
+Cond_Op   :    Cond { }
+	  ;
+
+For_Rest_Stmt  :    Cond_Op ';' { }
+               |    Cond_Op ';' Expr { }
                ;
 
 Jump_Stmt :    T_Continue ';' { }
@@ -422,7 +452,7 @@ Ext_Decl  :    Fn_Def { }
           |    Decl { }
           ;
 
-Fn_Def    :    Fn_Proto Comp_Stmt { }
+Fn_Def    :    Fn_Proto Comp_Stmt_No_Scope { }
 
 
 %%
