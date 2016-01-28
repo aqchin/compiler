@@ -54,6 +54,7 @@ OPERATOR          ([-+/*%=.,;!<>()[\]{}:])
 BEG_COMMENT       ("/*")
 END_COMMENT       ("*/")
 SINGLE_COMMENT    ("//"[^\n]*)
+FIELD_SELECTION   ({IDENTIFIER}"."(([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW]))
 
 %%             /* BEGIN RULES SECTION */
 
@@ -93,7 +94,18 @@ SINGLE_COMMENT    ("//"[^\n]*)
 "case"              { return T_Case;        }
 "default"           { return T_Default;     }
 
-
+"layout"	    { return T_Layout;	    }
+"continue"	    { return T_Continue;    }
+"do"		    { return T_Do;	    }
+"in"		    { return T_In;	    }
+"out"		    { return T_Out;	    }
+"uniform"	    { return T_Uniform;     }
+"vec2"		    { return T_Vec2;	    }
+"vec3"		    { return T_Vec3;	    }
+"vec4"		    { return T_Vec4;	    }
+"mat2"		    { return T_Mat2;	    }
+"mat3"		    { return T_Mat3;	    }
+"mat4"		    { return T_Mat4;	    }
 
  /* -------------------- Operators ----------------------------- */
 "<="                { return T_LessEqual;   }
@@ -125,6 +137,8 @@ SINGLE_COMMENT    ("//"[^\n]*)
                        yylval.identifier[MaxIdentLen] = '\0';
                        return T_Identifier; }
 
+ /* -------------------- Other Stuff ---------------------------- */
+{FIELD_SELECTION}   { return T_Field_Selection; }
 
  /* -------------------- Default rule (error) -------------------- */
 .                   { ReportError::UnrecogChar(&yylloc, yytext[0]); }
