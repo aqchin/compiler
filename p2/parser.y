@@ -110,9 +110,319 @@ DeclList  :    DeclList Decl        { ($$=$1)->Append($2); }
           |    Decl                 { ($$ = new List<Decl*>)->Append($1); }
           ;
 
-Decl      :    T_Void               { $$ = new VarDecl(); /* pp2: test only. Replace with correct rules  */ } 
+Prim_Expr :    T_Identifier { $$=$1; }
+          |    T_IntConstant { $$=$1; }
+          |    T_FloatConstant { $$=$1; }
+          |    T_BoolConstant { $$=$1; }
+          |    '(' Expr ')' { $$=$2; }
           ;
-          
+
+Post_Expr :    Prim_Expr { $$=$1; }
+          |    Post_Expr '[' Int_Expr ']' { $$=$1; }
+          |    Fn_Call { $$=$1; }
+          |    Post_Expr '.' T_Field_Selection { $$=$1; }
+          |    Post_Expr T_Inc { $$=$1; }
+          |    Post_Expr T_Dec { $$=$1; }
+          ;
+
+Int_Expr  :    Expr { $$=$1; }
+          ;
+
+Fn_Call   :    Fn_Call_Hdr_Param ')' { }
+          |    Fn_Call_Hdr_NParam ')' { }
+          ;
+
+Fn_Call_Hdr_NParam :    Fn_Call_Hdr T_Void { }
+                   |    Fn_Call_Hdr { }
+                   ;
+
+Fn_Call_Hdr_Param  :    Fn_Call_Hdr Assign_Expr { }
+                   |    Fn_Call_Hdr_Param ',' Assign_Expr { }
+                   ;
+
+Fn_Call_Hdr        :    Fn_Ident '(' { }
+                   ;
+
+Fn_Ident  :    Type_Spec { }
+          |    Post_Expr { }
+          ;
+
+Un_Expr   :    Post_Expr { }
+          |    T_Inc Un_Expr { }
+          |    T_Dec Un_Expr { }
+          |    Un_Op Un_Expr { }
+          ;
+
+Un_Op     :    '+' { }
+          |    '-' { }
+          ;
+
+Mult_Expr :    Un_Expr { }
+          |    Mult_Expr '*' Un_Expr { }
+          |    Mult_Expr '/' Un_Expr { }
+          ;
+
+Add_Expr  :    Mult_Expr { }
+          |    Add_Expr '+' Mult_Expr { }
+          |    Add_Expr '-' Mult_Expr { }
+          ;
+
+Sh_Expr   :    Add_Expr { }
+          ;
+
+Rela_Expr :    Sh_Expr { }
+          |    Rela_Expr '<' Sh_Expr { }
+          |    Rela_Expr '>' Sh_Expr { }
+          |    Rela_Expr T_LessEqual Sh_Expr { }
+          |    Rela_Expr T_GreaterEqual Sh_Expr { }
+          ;
+
+Eq_Expr   :    Rela_Expr { }
+          |    Eq_Expr T_Equal Rela_Expr { }
+          |    Eq_Expr T_NotEqual Rela_Expr { }
+          ;
+
+Log_And_Expr  :    Eq_Expr { }
+              |    Log_And_Expr T_And Eq_Expr { }
+              ;
+
+Log_Or_Expr   :    Log_And_Expr { }
+              |    Log_Or_Expr T_Or Log_And_Expr { }
+              ;
+
+Cond_Expr :    Log_Or_Expr { }
+          ;
+
+Assign_Expr   :    Cond_Expr { }
+              |    Un_Expr Assign_Op Assign_Expr { }
+              ;
+
+Assign_Op :    '=' { }
+          |    T_Mul_Assign { }
+          |    T_Div_Assign { }
+          |    T_Add_Assign { }
+          |    T_Sub_Assign { }
+          ;
+
+Expr      :    Assign_Expr { }
+          |    Expr ',' Assign_Expr { }
+          ;
+
+Const_Expr    :    Cond_Expr { }
+              ;
+
+Decl      :    Init_DeclorList ';' { }
+          |    Type_Qual ';' { }
+          |    Type_Qual T_Identifier ';' { }
+          |    Type_Qual T_Identifier Ident_List ';' { }
+          ;
+
+Ident_List    :    ',' T_Identifier { }
+              |    Ident_List ',' T_Identifier { }
+              ;
+
+Fn_Proto  :    Fn_Declor ')' { }
+          ;
+
+Fn_Declor :    Fn_Hdr { }
+          |    Fn_Hdr_Param { }
+          ;
+
+Fn_Hdr_Param  :    Fn_Hdr Param_Decl { }
+              |    Fn_Hdr_Param ',' Param_Decl { }
+              ;
+
+Fn_Hdr    :    Full_Spec_T  T_Identifier '(' { }
+          ;
+
+Param_Declor  :    Type_Spec T_Identifier { }
+              |    Type_Spec T_Identifier Arr_Spec { }
+              ;
+
+Param_Decl    :    Type_Qual Param_Declor { }
+              |    Param_Declor { }
+              |    Type_Qual Param_T_Spec { }
+              |    Param_T_Spec { }
+              ;
+
+Param_T_Spec  :    Type_Spec { }
+              ;
+
+Init_DeclorList    :    Sing_Decl { }
+                   |    Init_DeclorList ',' T_Identifier { }
+                   |    Init_DeclorList ',' T_Identifier Arr_Spec { }
+                   |    Init_DeclorList ',' T_Identifier Arr_Spec '=' Init { }
+                   |    Init_DeclorList ',' T_Identifier '=' Init { }
+                   ;
+
+Sing_Decl :    Full_Spec_T { }
+          |    Full_Spec_T T_Identifier { }
+          |    Full_Spec_T T_Identifier Arr_Spec { }
+          |    Full_Spec_T T_Identifier Arr_Spec '=' Init { }
+          |    Full_Spec_T T_Identifier '=' Init { }
+          ;
+
+Full_Spec_T   :    Type_Spec { }
+              |    Type_Qual Type_Spec { }
+              ;
+
+LO_Qual   :    T_Layout '(' LO_IDList ')' { }
+          ;
+
+LO_IDList :    LO_ID { }
+          |    LO_IDList ',' LO_ID { }
+          ;
+
+LO_ID     :    T_Identifier { }
+          |    T_Identifier '=' T_IntConstant { }
+          ;
+
+Type_Qual :    Sing_T_Qual { }
+          |    Type_Qual Sing_T_Qual { }
+          ;
+
+Sing_T_Qual   :    Stor_Qual { }
+              |    LO_Qual { }
+              ;
+
+Stor_Qual :    T_Const { }
+          |    T_In { }
+          |    T_Out { }
+          |    T_InOut { }
+          |    T_Uniform { }
+          ;
+
+Type_Spec :    Type_Spec_NArr { }
+          |    Type_Spec_NArr Arr_Spec { }
+          ;
+
+Arr_Spec  :    '[' ']' { }
+          |    '[' Const_Expr ']' { }
+          |    Arr_Spec '[' ']' { }
+          |    Arr_Spec '[' Const_Expr ']' { }
+          ;
+
+Type_Spec_NArr :    T_Void { }
+               |    T_Float { }
+               |    T_Int { }
+               |    T_Bool { }
+               |    T_Vec2 { }
+               |    T_Vec3 { }
+               |    T_Vec4 { }
+               |    T_BVec2 { }
+               |    T_BVec3 { }
+               |    T_BVec4 { }
+               |    T_IVec2 { }
+               |    T_IVec3 { }
+               |    T_IVec4 { }
+               |    T_UVec2 { }
+               |    T_UVec3 { }
+               |    T_UVec4 { }
+               |    T_Mat2 { }
+               |    T_Mat3 { }
+               |    T_Mat4 { }
+               |    Str_Spec { }
+
+Str_Spec  :    T_Struct T_Identifier '{' Str_DeclList '}' { }
+          |    T_Struct '{' Str_DeclList '}' { }
+          ;
+
+Str_DeclList   :    Str_Decl { }
+               |    Str_DeclList Str_Decl { }
+               ;
+
+Str_Decl  :    Type_Spec Str_DeclorList ';' { }
+          |    Type_Qual Type_Spec Str_DeclorList ';' { }
+          ;
+
+Str_DeclorList :    Str_Declor { }
+               |    Str_DeclorList ',' Str_Declor { }
+               ;
+
+Str_Declor     :    T_Identifier { }
+               |    T_Identifier Arr_Spec { }
+               ;
+
+Init      :    Assign_Expr { }
+          ;
+
+Decl_Stmt :    Decl { }
+          ;
+
+Stmt      :    Comp_Stmt { $$ = $1; }
+          |    Simp_Stmt { $$ = $1; }
+          ;
+
+Simple_Stmt    :    Decl_Stmt { }
+               |    Expr_Stmt { }
+               |    Sel_Stmt { }
+               |    Swi_Stmt { }
+               |    Case_Lbl { }
+               |    Iter_Stmt { }
+               |    Jump_Stmt { }
+               ;
+
+Comp_Stmt :    '{' '}' { }
+          |    '{' StmtList '}' { }
+          ;
+
+StmtList  :    Stmt { }
+          |    StmtList Stmt { }
+          ;
+
+Expr_Stmt :   ';' { }
+          |    Expr ';' { }
+          ;
+
+Sel_Stmt  :    T_If '(' Expr ')' Sel_Rest_Stmt { }
+          ;
+
+Sel_Rest_Stmt  :    Stmt T_Else Stmt { }
+               |    Stmt { }
+               ;
+
+Cond      :    Expr { }
+          |    Full_Spec_T T_Identifier T_Equal Init { }
+          ;
+
+Swi_Stmt  :    T_Switch '(' Expr ')' '{' Swi_StmtList '}' { }
+          ;
+
+Swi_StmtList   :    StmtList { }
+               ;
+
+Case_Lbl  :    T_Case Expr ':' { }
+          |    T_Default ':' { }
+          ;
+
+Iter_Stmt :    T_While '(' Cond ')' Stmt { }
+          |    T_Do Stmt T_While '(' Expr ')' ';' { }
+          |    T_For '(' For_Init_Stmt For_Rest_stmt ')' Stmt { }
+          ;
+
+For_Init_Stmt  :    Expr_Stmt { }
+               |    Decl_Stmt { }
+               ;
+
+For_Rest_Stmt  :    Cond ';' { }
+               |    Cond ';' Expr { }
+               ;
+
+Jump_Stmt :    T_Continue ';' { }
+          |    T_Break ';' { }
+          |    T_Return ';' { }
+          |    T_Return Expr ';' { }
+          ;
+
+Tran_U    :    Tran_U Ext_Decl { }
+          |    Ext_Decl { }
+          ;
+
+Ext_Decl  :    Fn_Def { }
+          |    Decl { }
+          ;
+
+Fn_Def    :    Fn_Proto Comp_Stmt { }
 
 
 %%
