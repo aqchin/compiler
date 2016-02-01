@@ -36,7 +36,7 @@ static void DoBeforeEachAction();
  * line later to provide context on errors.
  */
 %s N
-%x COPY COMM
+%x COPY COMM FIELDS
 %option stack
 
 /* Definitions
@@ -50,11 +50,12 @@ INTEGER           ({DIGIT}+)
 EXPONENT          ([Ee][-+]?{INTEGER})
 FLOAT             ({INTEGER}"."{DIGIT}*[fF]?)
 IDENTIFIER        ([a-zA-Z][a-zA-Z_0-9]*)
-OPERATOR          ([-+/*%=.,;!<>()[\]{}:])
+/* OPERATOR          ([-+/*%=.,;!<>()[\]{}:]) */
+OPERATOR	  ([%,![\]])
 BEG_COMMENT       ("/*")
 END_COMMENT       ("*/")
 SINGLE_COMMENT    ("//"[^\n]*)
-FIELD_SELECTION   ({IDENTIFIER}"."(([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW]))
+SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW])
 
 %%             /* BEGIN RULES SECTION */
 
@@ -94,12 +95,8 @@ FIELD_SELECTION   ({IDENTIFIER}"."(([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][
 "case"              { return T_Case;        }
 "default"           { return T_Default;     }
 
-"layout"	    { return T_Layout;	    }
 "continue"	    { return T_Continue;    }
 "do"		    { return T_Do;	    }
-"in"		    { return T_In;	    }
-"out"		    { return T_Out;	    }
-"uniform"	    { return T_Uniform;     }
 "vec2"		    { return T_Vec2;	    }
 "vec3"		    { return T_Vec3;	    }
 "vec4"		    { return T_Vec4;	    }
@@ -108,15 +105,40 @@ FIELD_SELECTION   ({IDENTIFIER}"."(([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][
 "mat4"		    { return T_Mat4;	    }
 
  /* -------------------- Operators ----------------------------- */
-"<="                { return T_LessEqual;   }
-">="                { return T_GreaterEqual;}
-"=="                { return T_Equal;       }
-"!="                { return T_NotEqual;    }
-"&&"                { return T_And;         }
-"||"                { return T_Or;          }
+"<="                { return T_LeOp;        }
+">="                { return T_GeOp;        }
+"=="                { return T_EqOp;        }
+"!="                { return T_NeOp;        }
+"&&"                { return T_AndOp;       }
+"||"                { return T_OrOp;        }
 "[]"                { return T_Dims;        }
 "++"                { return T_Inc;         }
 "--"                { return T_Dec;         }
+
+"*="		    { return T_MulAssign;   }
+"/="		    { return T_DivAssign;   }
+"+="		    { return T_AddAssign;   }
+"-="		    { return T_SubAssign;   }
+"("		    { return T_LeftParen;   }
+")"		    { return T_RightParen;  }
+"{"		    { return T_LeftBrace;   }
+"}"		    { return T_RightBrace;  }
+
+"."		    { BEGIN(FIELDS); return T_Dot;		}
+<FIELDS>{SWIZZLE}   { BEGIN(N); return T_FieldSelection; 	}
+<FIELDS>.	    { ReportError::Formatted(&yylloc, yytext);
+						      return 0; }
+
+":"		    { return T_Colon;	    }
+"="		    { return T_Equal;	    }
+";"		    { return T_Semicolon;   }
+"-"		    { return T_Dash;	    }
+"+"		    { return T_Plus;	    }
+"*"		    { return T_Star;	    }
+"/"		    { return T_Slash;	    }
+"<"		    { return T_LeftAngle;   }
+">"		    { return T_RightAngle;  }
+
 {OPERATOR}          { return yytext[0];     }
 
  /* -------------------- Constants ------------------------------ */
@@ -136,9 +158,6 @@ FIELD_SELECTION   ({IDENTIFIER}"."(([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][
                        strncpy(yylval.identifier, yytext, MaxIdentLen);
                        yylval.identifier[MaxIdentLen] = '\0';
                        return T_Identifier; }
-
- /* -------------------- Other Stuff ---------------------------- */
-{FIELD_SELECTION}   { return T_Field_Selection; }
 
  /* -------------------- Default rule (error) -------------------- */
 .                   { ReportError::UnrecogChar(&yylloc, yytext[0]); }

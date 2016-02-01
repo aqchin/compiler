@@ -1,6 +1,6 @@
 #! /bin/sh
 
-[ -x dcc ] || { echo "Error: dcc not executable"; exit 1; }
+[ -x glc ] || { echo "Error: glc not executable"; exit 1; }
 
 LIST=
 if [ "$#" = "0" ]; then
@@ -17,15 +17,15 @@ for file in $LIST; do
 	ext=''
 	if [ -r $base.frag ]; then
 		ext='frag'
-	elif [ -r $base.decaf ]; then
-		ext='decaf'
+	elif [ -r $base.glsl ]; then
+		ext='glsl'
 	else
 		echo "Error: Input file for base: $base not found"
 		exit 1
 	fi
 
 	tmp=${TMP:-"/tmp"}/check.tmp
-	./dcc < $base.$ext 1>$tmp 2>&1
+	./glc < $base.$ext 1>$tmp 2>&1
 
 	printf "Checking %-27s: " $file
 	if ! cmp -s $tmp $file; then
