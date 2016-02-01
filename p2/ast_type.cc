@@ -30,7 +30,6 @@ Type *Type::mat2Type = new Type("mat2");
 Type *Type::mat3Type = new Type("mat3");
 Type *Type::mat4Type = new Type("mat4");
 Type *Type::floatType = new Type("float");
-Type *Type::intType = new Type("int");
 
 Type::Type(const char *n) {
     Assert(n);

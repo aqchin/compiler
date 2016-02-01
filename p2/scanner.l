@@ -105,12 +105,12 @@ SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW])
 "mat4"		    { return T_Mat4;	    }
 
  /* -------------------- Operators ----------------------------- */
-"<="                { return T_LeOp;        }
-">="                { return T_GeOp;        }
+"<="                { return T_LessEqual;   }
+">="                { return T_GreaterEqual;}
 "=="                { return T_EqOp;        }
-"!="                { return T_NeOp;        }
-"&&"                { return T_AndOp;       }
-"||"                { return T_OrOp;        }
+"!="                { return T_NotEqual;    }
+"&&"                { return T_And;         }
+"||"                { return T_Or;          }
 "[]"                { return T_Dims;        }
 "++"                { return T_Inc;         }
 "--"                { return T_Dec;         }
@@ -123,12 +123,6 @@ SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW])
 ")"		    { return T_RightParen;  }
 "{"		    { return T_LeftBrace;   }
 "}"		    { return T_RightBrace;  }
-
-"."		    { BEGIN(FIELDS); return T_Dot;		}
-<FIELDS>{SWIZZLE}   { BEGIN(N); return T_FieldSelection; 	}
-<FIELDS>.	    { ReportError::Formatted(&yylloc, yytext);
-						      return 0; }
-
 ":"		    { return T_Colon;	    }
 "="		    { return T_Equal;	    }
 ";"		    { return T_Semicolon;   }
@@ -139,6 +133,11 @@ SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW])
 "<"		    { return T_LeftAngle;   }
 ">"		    { return T_RightAngle;  }
 
+"."		    { BEGIN(FIELDS); return T_Dot;		}
+<FIELDS>{SWIZZLE}   { BEGIN(N); return T_FieldSelection; 	}
+<FIELDS>.	    { ReportError::Formatted(&yylloc, yytext);
+						      return 0; }
+
 {OPERATOR}          { return yytext[0];     }
 
  /* -------------------- Constants ------------------------------ */
@@ -148,7 +147,7 @@ SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW])
                          return T_IntConstant; }
 {HEX_INTEGER}       { yylval.integerConstant = strtol(yytext, NULL, 16);
                          return T_IntConstant; }
-{FLOAT}             { yylval.doubleConstant = atof(yytext);
+{FLOAT}             { yylval.floatConstant = atof(yytext);
                          return T_FloatConstant; }
 
 

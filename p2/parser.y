@@ -38,14 +38,71 @@ void yyerror(const char *msg); // standard error-handling routine
  * pp2: You will need to add new fields to this union as you add different 
  *      attributes to your non-terminal symbols.
  */
+
+%code requires {
+    struct Function {
+        Type *tp;
+        Identifier *id;
+    };
+    
+    struct FunctionParam {
+        Type *tp;
+        Identifier *id;
+        List<VarDecl*> *pList;
+    };
+    
+    struct NStmtBlock {
+        List<VarDecl*> *vList;
+        List<Stmt*> *sList;
+    };
+    
+    struct ThenElse {
+        Stmt *thenB;
+        Stmt *elseB;
+    };
+    
+    struct ForRest {
+        Expr *test;
+        Expr *step;
+    };
+
+}
+
 %union {
     int integerConstant;
     bool boolConstant;
     char *stringConstant;
     double doubleConstant;
+    float floatConstant;
     char identifier[MaxIdentLen+1]; // +1 for terminating null
     Decl *decl;
     List<Decl*> *declList;
+    VarDecl *varDecl;
+    Type *type;
+    Identifier *ident;
+    Expr *expr;
+    FnDecl *fnDecl;
+    Operator *op;
+    Stmt *stmt;
+    AssignExpr *assignExpr;
+    LoopStmt *loopStmt;
+    ForStmt *forStmt;
+    WhileStmt *whileStmt;
+    IfStmt *ifStmt;
+    SwitchStmt *switchStmt;
+    IntConstant *intConstant;
+    Case *cas;
+    Program *program;
+
+    struct Function func;
+    
+    struct FunctionParam funcParam;
+    
+    struct NStmtBlock stmtBlk;
+    
+    struct ThenElse teStmt;
+    
+    struct ForRest tsStmt;
 }
 
 
@@ -56,8 +113,8 @@ void yyerror(const char *msg); // standard error-handling routine
  * in the generated y.tab.h header file.
  */
 %token   T_Void T_Bool T_Int T_Float 
-/*%token   T_LessEqual T_GreaterEqual T_Equal T_NotEqual T_Dims
-%token   T_And T_Or  */
+%token   T_LessEqual T_GreaterEqual T_EqOp T_NotEqual T_Dims
+%token   T_And T_Or
 %token   T_While T_For T_If T_Else T_Return T_Break
 %token   T_Inc T_Dec T_Switch T_Case T_Default
 
@@ -65,16 +122,17 @@ void yyerror(const char *msg); // standard error-handling routine
 %token   T_UVec2 T_UVec3 T_UVec4 T_Vec2 T_Vec3 T_Vec4 T_Struct
 %token   T_In T_Out T_InOut T_Const T_Uniform T_Layout T_Continue
 %token   T_Do T_TypeName T_FieldSelection T_Mat2 T_Mat3 T_Mat4
-%token   T_LeOp T_GeOp T_EqOp T_NeOp T_AndOp T_OrOp T_Dims
+/* %token   T_LeOp T_GeOp T_EqOp T_NeOp T_AndOp T_OrOp T_Dims */
 %token   T_MulAssign T_DivAssign T_AddAssign T_SubAssign
 %token   T_LeftParen T_RightParen T_LeftBrace T_RightBrace T_Dot
-%token   T_Colon T_Equal T_SemiColon T_Dash T_Plus T_Star T_Slash
+%token   T_Colon T_Equal T_Semicolon T_Dash T_Plus T_Star T_Slash
 %token   T_LeftAngle T_RightAngle
 
 %token   <identifier> T_Identifier
 %token   <integerConstant> T_IntConstant
 %token   <floatConstant> T_FloatConstant
 %token   <boolConstant> T_BoolConstant
+%token   <identifier> T_Field_Selection
 
 
 /* Non-terminal types
@@ -90,6 +148,69 @@ void yyerror(const char *msg); // standard error-handling routine
  */
 %type <declList>  DeclList 
 %type <decl>      Decl
+%type <ident> Var_Ident
+%type <expr> Prim_Expr
+%type <expr> Post_Expr
+%type <expr> Int_Expr
+%type <ident> Fn_Ident
+%type <expr> Un_Expr
+%type <op> Un_Op
+%type <expr> Mult_Expr
+%type <expr> Add_Expr
+%type <expr> Sh_Expr
+%type <expr> Rela_Expr
+%type <expr> Eq_Expr
+%type <expr> And_Expr
+%type <expr> Excl_Or_Expr
+%type <expr> Incl_Or_Expr
+%type <expr> Log_And_Expr
+%type <expr> Log_Xor_Expr
+%type <expr> Log_Or_Expr
+%type <expr> Cond_Expr
+%type <expr> Assign_Expr
+%type <op> Assign_Op
+%type <expr> Expr
+%type <expr> Const_Expr
+%type <fnDecl> Fn_Proto
+%type <fnDecl> Fn_Declor
+%type <funcParam> Fn_Hdr_Param
+%type <func> Fn_Hdr
+%type <varDecl> Param_Declor
+%type <varDecl> Param_Decl
+%type <type> Param_T_Spec
+%type <varDecl> Init_DeclorList
+%type <varDecl> Sing_Decl
+%type <type> Full_Spec_T
+%type <type> Type_Spec
+%type <type> Type_Spec_NArr
+%type <expr> Init
+/* %type <decl> Decl_Stmt   "not being tested" */
+%type <stmt> Stmt
+%type <stmt> Stmt_No_Scope
+%type <stmt> Stmt_Scope
+%type <stmt> Simp_Stmt
+%type <stmt> Comp_Stmt_Scope
+%type <stmt> Comp_Stmt_No_Scope
+%type <stmtBlk> StmtList
+%type <expr> Expr_Stmt
+%type <ifStmt> Sel_Stmt
+%type <teStmt> Sel_Rest_Stmt
+%type <expr> Cond
+%type <switchStmt> Swi_Stmt /* incomplete */
+%type <stmtBlk> Swi_StmtList
+%type <intConstant> Case_Lbl
+%type <cas> Case_Stmt
+%type <loopStmt> Iter_Stmt
+%type <expr> For_Init_Stmt
+%type <expr> Cond_Op
+%type <tsStmt> For_Rest_Stmt
+%type <declList> Trans_U
+%type <decl> Ext_Decl
+%type <fnDecl> Fn_Def
+%type <program> Program
+
+%nonassoc NOELSE
+%nonassoc T_ELSE
 
 %%
 /* Rules
@@ -98,10 +219,10 @@ void yyerror(const char *msg); // standard error-handling routine
  * %% markers which delimit the Rules section.
 	 
  */
-Program   :    DeclList            { 
-                                      @1; 
-                                      /* pp2: The @1 is needed to convince 
-                                       * yacc to set up yylloc. You can remove 
+Program   :    Trans_U              {
+                                      @1;
+                                      /* pp2: The @1 is needed to convince
+                                       * yacc to set up yylloc. You can remove
                                        * it once you have other uses of @n*/
                                       Program *program = new Program($1);
                                       // if no errors, advance to next phase
@@ -114,349 +235,265 @@ DeclList  :    DeclList Decl        { ($$=$1)->Append($2); }
           |    Decl                 { ($$ = new List<Decl*>)->Append($1); }
           ;
 
-Var_Ident :    T_Identifier { }
-	  ;
-
-Prim_Expr :    Var_Ident { }
-          |    T_IntConstant { }
-          |    T_FloatConstant { }
-          |    T_BoolConstant { }
-          |    '(' Expr ')' { }
-          ;
-
-Post_Expr :    Prim_Expr { }
-	  |    Post_Expr '[' Int_Expr ']' { }
-          |    Fn_Call { }
-          |    Post_Expr '.' T_Field_Selection { }
-          |    Post_Expr T_Inc { }
-          |    Post_Expr T_Dec { }
-          ;
-
-Int_Expr  :    Expr { }
-          ;
-
-Fn_Call   :    Fn_Call_Hdr_Param ')' { }
-          |    Fn_Call_Hdr_NParam ')' { }
-          ;
-
-Fn_Call_Hdr_NParam :    Fn_Call_Hdr T_Void { }
-                   |    Fn_Call_Hdr { }
-                   ;
-
-Fn_Call_Hdr_Param  :    Fn_Call_Hdr Assign_Expr { }
-                   |    Fn_Call_Hdr_Param ',' Assign_Expr { }
-                   ;
-
-Fn_Call_Hdr        :    Fn_Ident '(' { }
-                   ;
-
-Fn_Ident  :    Type_Spec { }
-          |    Post_Expr { }
-          ;
-
-Un_Expr   :    Post_Expr { }
-          |    T_Inc Un_Expr { }
-          |    T_Dec Un_Expr { }
-          |    Un_Op Un_Expr { }
-          ;
-
-Un_Op     :    '+' { }
-          |    '-' { }
-          ;
-
-Mult_Expr :    Un_Expr { }
-          |    Mult_Expr '*' Un_Expr { }
-          |    Mult_Expr '/' Un_Expr { }
-          ;
-
-Add_Expr  :    Mult_Expr { }
-          |    Add_Expr '+' Mult_Expr { }
-          |    Add_Expr '-' Mult_Expr { }
-          ;
-
-Sh_Expr   :    Add_Expr { }
-          ;
-
-Rela_Expr :    Sh_Expr { }
-          |    Rela_Expr '<' Sh_Expr { }
-          |    Rela_Expr '>' Sh_Expr { }
-          |    Rela_Expr T_LessEqual Sh_Expr { }
-          |    Rela_Expr T_GreaterEqual Sh_Expr { }
-          ;
-
-Eq_Expr   :    Rela_Expr { }
-          |    Eq_Expr T_Equal Rela_Expr { }
-          |    Eq_Expr T_NotEqual Rela_Expr { }
-          ;
-
-And_Expr  :    Eq_Expr { }
-	  ;
-
-Excl_Or_Expr  :    And_Expr { }
+Var_Ident :    T_Identifier { $$ = new Identifier(@1,$1); }
 	      ;
 
-Incl_Or_Expr  :    Excl_Or_Expr { }
+Prim_Expr :    Var_Ident { $$ = new VarExpr(@1,$1); }
+          |    T_IntConstant { $$ = new IntConstant(@1,$1); }
+          |    T_FloatConstant { $$ = new FloatConstant(@1,$1); }
+          |    T_BoolConstant { $$ = new BoolConstant(@1,$1); }
+          |    '(' Expr ')' { $$ = $2; }
+          ;
+
+Post_Expr :    Prim_Expr { $$ = $1; }
+          |    Post_Expr '.' T_Field_Selection { $$ = new FieldAccess($1,new Identifier(@3,$3)); }
+          |    Post_Expr T_Inc { $$ = new PostfixExpr($1,new Operator(@2,"++")); }
+          |    Post_Expr T_Dec { $$ = new PostfixExpr($1,new Operator(@2,"--")); }
+          ;
+
+Int_Expr  :    Expr { $$ = $1; }
+          ;
+
+Fn_Ident  :    Type_Spec { $$ = new Identifier(@1,$1->getTypeName()); }
+          |    Post_Expr { $$ = $1; }
+          ;
+
+Un_Expr   :    Post_Expr { $$ = $1; }
+          |    T_Inc Un_Expr { $$ = new ArithmeticExpr(new Operator(@1,"++"),$2); }
+          |    T_Dec Un_Expr { $$ = new ArithmeticExpr(new Operator(@1,"--"),$2); }
+          |    Un_Op Un_Expr { $$ = new ArithmeticExpr($1,$2); }
+          ;
+
+Un_Op     :    '+' { $$ = new Operator(@1,"+"); }
+          |    '-' { $$ = new Operator(@1,"-"); }
+          ;
+
+Mult_Expr :    Un_Expr { $$ = $1; }
+          |    Mult_Expr '*' Un_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"*"),$3); }
+          |    Mult_Expr '/' Un_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"/"),$3); }
+          ;
+
+Add_Expr  :    Mult_Expr { $$ = $1; }
+          |    Add_Expr '+' Mult_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"+"),$3); }
+          |    Add_Expr '-' Mult_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"-"),$3); }
+          ;
+
+Sh_Expr   :    Add_Expr { $$ = $1; }
+          ;
+
+Rela_Expr :    Sh_Expr { $$ = $1; }
+          |    Rela_Expr '<' Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,"<"),$3); }
+          |    Rela_Expr '>' Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,">"),$3); }
+          |    Rela_Expr T_LessEqual Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,"<="),$3); }
+          |    Rela_Expr T_GreaterEqual Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,">="),$3); }
+          ;
+
+Eq_Expr   :    Rela_Expr { $$ = $1; }
+          |    Eq_Expr T_EqOp Rela_Expr { $$ = new EqualityExpr($1,new Operator(@2,"=="),$3); }
+          |    Eq_Expr T_NotEqual Rela_Expr { $$ = new EqualityExpr($1,new Operator(@2,"!="),$3); }
+          ;
+
+And_Expr  :    Eq_Expr { $$ = $1; }
+          ;
+
+Excl_Or_Expr  :    And_Expr { $$ = $1; }
+              ;
+
+Incl_Or_Expr  :    Excl_Or_Expr { $$ = $1; }
+              ;
+
+Log_And_Expr  :    Incl_Or_Expr { $$ = $1; }
+              |    Log_And_Expr T_And Incl_Or_Expr { $$ = new LogicalExpr($1,new Operator(@2,"&&"),$3); }
+              ;
+
+Log_Xor_Expr  :    Log_And_Expr { $$ = $1; }
 	      ;
 
-Log_And_Expr  :    Incl_Or_Expr { }
-              |    Log_And_Expr T_And Incl_Or_Expr { }
+Log_Or_Expr   :    Log_Xor_Expr { $$ = $1; }
+              |    Log_Or_Expr T_Or Log_Xor_Expr { $$ = new LogicalExpr($1,new Operator(@2,"||"),$3); }
               ;
 
-Log_Xor_Expr  :    Log_And_Expr { }
-	      ;
-
-Log_Or_Expr   :    Log_Xor_Expr { }
-              |    Log_Or_Expr T_Or Log_Xor_Expr { }
-              ;
-
-Cond_Expr :    Log_Or_Expr { }
+Cond_Expr :    Log_Or_Expr { $$ = $1; }
           ;
 
-Assign_Expr   :    Cond_Expr { }
-              |    Un_Expr Assign_Op Assign_Expr { }
+Assign_Expr   :    Cond_Expr { $$ = $1; }
+              |    Un_Expr Assign_Op Assign_Expr { $$ = new AssignExpr($1,$2,$3); }
               ;
 
-Assign_Op :    '=' { }
-          |    T_Mul_Assign { }
-          |    T_Div_Assign { }
-          |    T_Add_Assign { }
-          |    T_Sub_Assign { }
+Assign_Op :    '=' { $$ = new Operator(@1,"="); }
+          |    T_MulAssign { $$ = new Operator(@1,"*="); }
+          |    T_DivAssign { $$ = new Operator(@1,"/="); }
+          |    T_AddAssign { $$ = new Operator(@1,"+="); }
+          |    T_SubAssign { $$ = new Operator(@1,"-="); }
           ;
 
-Expr      :    Assign_Expr { }
-          |    Expr ',' Assign_Expr { }
+Expr      :    Assign_Expr { $$ = $1; }
           ;
 
-Const_Expr    :    Cond_Expr { }
+Const_Expr    :    Cond_Expr { $$ = $1; }
               ;
 
-Decl      :    Init_DeclorList ';' { }
-          |    Type_Qual ';' { }
-          |    Type_Qual T_Identifier ';' { }
-          |    Type_Qual T_Identifier Ident_List ';' { }
+Decl      :    Fn_Proto ';' { $$ = $1; }
+          |    Init_DeclorList ';' { $$ = $1; }
           ;
 
-Ident_List    :    ',' T_Identifier { }
-              |    Ident_List ',' T_Identifier { }
-              ;
-
-Fn_Proto  :    Fn_Declor ')' { }
+Fn_Proto  :    Fn_Declor ')' { $$ = $1; }
           ;
 
-Fn_Declor :    Fn_Hdr { }
-          |    Fn_Hdr_Param { }
+Fn_Declor :    Fn_Hdr { $$ = new FnDecl($1.id,$1.tp,new List<VarDecl*>()); }
+          |    Fn_Hdr_Param { $$ = new FnDecl($1.id, $1.tp, $1.pList); }
           ;
 
-Fn_Hdr_Param  :    Fn_Hdr Param_Decl { }
-              |    Fn_Hdr_Param ',' Param_Decl { }
+Fn_Hdr_Param  :    Fn_Hdr Param_Decl {
+                    $$.tp = $1.tp;
+                    $$.id = $1.id;
+                    ($$.pList = new List<VarDecl*>())->Append($2);}
+              |    Fn_Hdr_Param ',' Param_Decl { $$ = $1;
+                    $$.pList->Append($3); }
               ;
 
-Fn_Hdr    :    Full_Spec_T  T_Identifier '(' { }
+Fn_Hdr    :    Full_Spec_T  T_Identifier '(' {
+                    $$.tp = $1;
+                    $$.id = new Identifier(@2,$2),$1;}
           ;
 
-Param_Declor  :    Type_Spec T_Identifier { }
-              |    Type_Spec T_Identifier Arr_Spec { }
+Param_Declor  :    Type_Spec T_Identifier { $$ = new VarDecl(new Identifier(@2,$2),$1); }
               ;
 
-Param_Decl    :    Type_Qual Param_Declor { }
-              |    Param_Declor { }
-              |    Type_Qual Param_T_Spec { }
-              |    Param_T_Spec { }
+Param_Decl    :    Param_Declor { $$ = $1; }
+              |    Param_T_Spec { $$ = new VarDecl(new Identifier(@1,""),$1); }
               ;
 
-Param_T_Spec  :    Type_Spec { }
+Param_T_Spec  :    Type_Spec { $$ = $1; }
               ;
 
-Init_DeclorList    :    Sing_Decl { }
-                   |    Init_DeclorList ',' T_Identifier { }
-                   |    Init_DeclorList ',' T_Identifier Arr_Spec { }
-                   |    Init_DeclorList ',' T_Identifier Arr_Spec '=' Init { }
-                   |    Init_DeclorList ',' T_Identifier '=' Init { }
+Init_DeclorList    :    Sing_Decl { $$ = $1; }
                    ;
 
-Sing_Decl :    Full_Spec_T { }
-          |    Full_Spec_T T_Identifier { }
-          |    Full_Spec_T T_Identifier Arr_Spec { }
-          |    Full_Spec_T T_Identifier Arr_Spec '=' Init { }
-          |    Full_Spec_T T_Identifier '=' Init { }
+Sing_Decl :    Full_Spec_T T_Identifier { $$ = new VarDecl(new Identifier(@2,$2),$1); }
           ;
 
-Full_Spec_T   :    Type_Spec { }
-              |    Type_Qual Type_Spec { }
+Full_Spec_T   :    Type_Spec { $$ = $1; }
               ;
 
-LO_Qual   :    T_Layout '(' LO_IDList ')' { }
+Type_Spec :    Type_Spec_NArr { $$ = $1; }
           ;
 
-LO_IDList :    LO_ID { }
-          |    LO_IDList ',' LO_ID { }
+Type_Spec_NArr :    T_Void { $$ = Type::voidType; }
+               |    T_Float { $$ = Type::floatType; }
+               |    T_Int { $$ = Type::intType; }
+               |    T_Vec2 { $$ = Type::vec2Type; }
+               |    T_Vec3 { $$ = Type::vec3Type; }
+               |    T_Vec4 { $$ = Type::vec4Type; }
+               |    T_Mat2 { $$ = Type::mat2Type; }
+               |    T_Mat3 { $$ = Type::mat3Type; }
+               |    T_Mat4 { $$ = Type::mat4Type; }
+               ;
+
+Init      :    Assign_Expr { $$ = $1; }
           ;
 
-LO_ID     :    T_Identifier { }
-          |    T_Identifier '=' T_IntConstant { }
+/*Decl_Stmt :    Decl { }*/
+/*          ;*/
+
+Stmt      :    Comp_Stmt_Scope { $$ = $1; }
+          |    Simp_Stmt { $$ = $1; }
           ;
 
-Type_Qual :    Sing_T_Qual { }
-          |    Type_Qual Sing_T_Qual { }
-          ;
-
-Sing_T_Qual   :    Stor_Qual { }
-              |    LO_Qual { }
+Stmt_No_Scope : Comp_Stmt_No_Scope { $$ = $1; }
+              | Simp_Stmt { $$ = $1; }
               ;
 
-Stor_Qual :    T_Const { }
-          |    T_In { }
-          |    T_Out { }
-          |    T_InOut { }
-          |    T_Uniform { }
-          ;
+Stmt_Scope    : Comp_Stmt_No_Scope { $$ = $1; }
+              | Simp_Stmt { $$ = $1; }
+              ;
 
-Type_Spec :    Type_Spec_NArr { }
-          |    Type_Spec_NArr Arr_Spec { }
-          ;
+Simp_Stmt     :    Expr_Stmt { $$ = $1; }
+              |    Sel_Stmt { $$ = $1; }
+              |    Swi_Stmt { $$ = $1; }
+              |    Case_Stmt { $$ = $1; }
+              |    Iter_Stmt { $$ = $1; }
+              ;
 
-Arr_Spec  :    '[' ']' { }
-          |    '[' Const_Expr ']' { }
-          |    Arr_Spec '[' ']' { }
-          |    Arr_Spec '[' Const_Expr ']' { }
-          ;
+Comp_Stmt_Scope   : '{' '}' { $$ = NULL; }
+                  | '{' StmtList '}' { $$ = new StmtBlock($2.vList,$2.sList); }
+                  ;
 
-Type_Spec_NArr :    T_Void { }
-               |    T_Float { }
-               |    T_Int { }
-               |    T_Bool { }
-               |    T_Vec2 { }
-               |    T_Vec3 { }
-               |    T_Vec4 { }
-               |    T_BVec2 { }
-               |    T_BVec3 { }
-               |    T_BVec4 { }
-               |    T_IVec2 { }
-               |    T_IVec3 { }
-               |    T_IVec4 { }
-               |    T_UVec2 { }
-               |    T_UVec3 { }
-               |    T_UVec4 { }
-               |    T_Mat2 { }
-               |    T_Mat3 { }
-               |    T_Mat4 { }
-               |    Str_Spec { }
-
-Str_Spec  :    T_Struct T_Identifier '{' Str_DeclList '}' { }
-          |    T_Struct '{' Str_DeclList '}' { }
-          ;
-
-Str_DeclList   :    Str_Decl { }
-               |    Str_DeclList Str_Decl { }
-               ;
-
-Str_Decl  :    Type_Spec Str_DeclorList ';' { }
-          |    Type_Qual Type_Spec Str_DeclorList ';' { }
-          ;
-
-Str_DeclorList :    Str_Declor { }
-               |    Str_DeclorList ',' Str_Declor { }
-               ;
-
-Str_Declor     :    T_Identifier { }
-               |    T_Identifier Arr_Spec { }
-               ;
-
-Init      :    Assign_Expr { }
-          ;
-
-Decl_Stmt :    Decl { }
-          ;
-
-Stmt      :    Comp_Stmt_Scope { }
-          |    Simp_Stmt { }
-          ;
-
-Stmt_No_Scope  : Comp_Stmt_No_Scope { }
-	       | Simp_Stmt { }
-	       ;
-
-Stmt_Scope     : Comp_Stmt_No_Scope { }
-	       | Simp_Stmt { }
-	       ;
-
-Simp_Stmt    :    Decl_Stmt { }
-               |    Expr_Stmt { }
-               |    Sel_Stmt { }
-               |    Swi_Stmt { }
-               |    Case_Lbl { }
-               |    Iter_Stmt { }
-               |    Jump_Stmt { }
-               ;
-
-Comp_Stmt_Scope    : '{' '}' { }
-                   | '{' StmtList '}' { }
-                   ;
-
-Comp_Stmt_No_Scope : '{' '}' {}
-		   | '{' StmtList '}' { }
+Comp_Stmt_No_Scope : '{' '}' { $$ = NULL; }
+		   | '{' StmtList '}' { $$ = new StmtBlock($2.vList,$2.sList); }
 		   ;
 
-StmtList  :    Stmt { }
-          |    StmtList Stmt { }
+StmtList  :    Stmt {
+                $$.vList = new List<VarDecl*>();
+                ($$.sList = new List<Stmt*>())->Append($1); }
+          |    StmtList Stmt {
+                $$ = $1;
+                $$.sList->Append($2); }
           ;
 
-Expr_Stmt :   ';' { }
-          |    Expr ';' { }
+Expr_Stmt :   ';' { $$ = new EmptyExpr(); }
+          |    Expr ';' { $$ = $1; }
           ;
 
-Sel_Stmt  :    T_If '(' Expr ')' Sel_Rest_Stmt { }
+Sel_Stmt  :    T_If '(' Expr ')' Sel_Rest_Stmt { $$ = new IfStmt($3,$5.thenB,$5.elseB); }
           ;
 
-Sel_Rest_Stmt  :    Stmt_Scope T_Else Stmt_Scope { }
-               |    Stmt_Scope { }
+Sel_Rest_Stmt  :    Stmt_Scope T_Else Stmt_Scope {
+                        $$.thenB = $1;
+                        $$.elseB = $3; }
+               |    Stmt_Scope %prec NOELSE {
+                        $$.thenB = $1;
+                        $$.elseB = NULL; }
                ;
 
-Cond      :    Expr { }
-          |    Full_Spec_T T_Identifier T_Equal Init { }
+Cond      :    Expr { $$ = $1; }
+          |    Full_Spec_T T_Identifier T_EqOp Init {
+                    /*VarExpr* given = new VarExpr(@2,new Identifier(@2,$2)); */
+                    $$ = new AssignExpr(new VarExpr(@2,new Identifier(@2,$2)), new Operator(@3,"=="),$4); }
           ;
 
 Swi_Stmt  :    T_Switch '(' Expr ')' '{' Swi_StmtList '}' { }
           ;
 
-Swi_StmtList   :    StmtList { }
+Swi_StmtList   :    StmtList { $$ = $1; }
                ;
 
-Case_Lbl  :    T_Case Expr ':' { }
+Case_Lbl  :    T_Case T_IntConstant ':' { $$ = new IntConstant(@2,$2); }
           |    T_Default ':' { }
           ;
 
-Iter_Stmt :    T_While '(' Cond ')' Stmt { }
-          |    T_Do Stmt T_While '(' Expr ')' ';' { }
-          |    T_For '(' For_Init_Stmt For_Rest_Stmt ')' Stmt_No_Scope { }
+Case_Stmt :    Case_Lbl Swi_StmtList { $$ = new Case($1,$2.sList); }
           ;
 
-For_Init_Stmt  :    Expr_Stmt { }
-               |    Decl_Stmt { }
+Iter_Stmt :    T_While '(' Cond ')' Stmt { $$ = new WhileStmt($3,$5); }
+          |    T_For '(' For_Init_Stmt For_Rest_Stmt ')' Stmt_No_Scope { $$ = new ForStmt($3,$4.test,$4.step,$6); }
+          ;
+
+For_Init_Stmt  :    Expr_Stmt { $$ = $1; }
                ;
 
-Cond_Op   :    Cond { }
-	  ;
+Cond_Op   :    Cond { $$ = $1; }
+          ;
 
-For_Rest_Stmt  :    Cond_Op ';' { }
-               |    Cond_Op ';' Expr { }
+For_Rest_Stmt  :    Cond_Op ';' {
+                        $$.test = $1;
+                        $$.step = NULL; }
+               |    Cond_Op ';' Expr {
+                        $$.test = $1;
+                        $$.step = $3; }
                ;
 
-Jump_Stmt :    T_Continue ';' { }
-          |    T_Break ';' { }
-          |    T_Return ';' { }
-          |    T_Return Expr ';' { }
+Trans_U   :    Trans_U Ext_Decl { ($$=$1)->Append($2); }
+          |    Ext_Decl { ($$=new List<Decl*>)->Append($1); }
           ;
 
-Tran_U    :    Tran_U Ext_Decl { }
-          |    Ext_Decl { }
+Ext_Decl  :    Fn_Def { $$ = $1; }
+          |    Decl { $$ = $1; }
           ;
 
-Ext_Decl  :    Fn_Def { }
-          |    Decl { }
-          ;
-
-Fn_Def    :    Fn_Proto Comp_Stmt_No_Scope { }
+Fn_Def    :    Fn_Proto Comp_Stmt_No_Scope {
+                    $$ = $1;
+                    if($2) $$->SetFunctionBody($2);}
 
 
 %%

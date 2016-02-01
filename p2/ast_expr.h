@@ -19,6 +19,13 @@ class Type; // for NewArray
 
 void yyerror(const char *msg);
 
+class Expr : public Stmt 
+{
+  public:
+    Expr(yyltype loc) : Stmt(loc) {}
+    Expr() : Stmt() {}
+};
+
 class VarExpr : public Expr
 {
   protected:
@@ -27,13 +34,6 @@ class VarExpr : public Expr
     VarExpr(yyltype loc, Identifier *ident);
     const char *GetPrintNameForNode() { return "VarExpr"; }
     void PrintChildren(int identLevel);
-};
-
-class Expr : public Stmt 
-{
-  public:
-    Expr(yyltype loc) : Stmt(loc) {}
-    Expr() : Stmt() {}
 };
 
 class ExprError : public Expr

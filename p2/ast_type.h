@@ -23,7 +23,7 @@ class Type : public Node
                 *nullType, *stringType, *errorType,
                 *vec2Type, *vec3Type, *vec4Type,
                 *mat2Type, *mat3Type, *mat4Type,
-                *floatType, *intType;
+                *floatType;
 
     Type(yyltype loc) : Node(loc) {}
     Type(const char *str);
