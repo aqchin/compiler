@@ -91,17 +91,15 @@ void yyerror(const char *msg); // standard error-handling routine
     IfStmt *ifStmt;
     SwitchStmt *switchStmt;
     IntConstant *intConstant;
+    BoolConstant *bConstant;
+    FloatConstant *fConstant;
     Case *cas;
     Program *program;
 
     struct Function func;
-    
     struct FunctionParam funcParam;
-    
     struct NStmtBlock stmtBlk;
-    
     struct ThenElse teStmt;
-    
     struct ForRest tsStmt;
 }
 
@@ -121,7 +119,7 @@ void yyerror(const char *msg); // standard error-handling routine
 %token   T_UInt T_BVec2 T_BVec3 T_BVec4 T_IVec2 T_IVec3 T_IVec4
 %token   T_UVec2 T_UVec3 T_UVec4 T_Vec2 T_Vec3 T_Vec4 T_Struct
 %token   T_In T_Out T_InOut T_Const T_Uniform T_Layout T_Continue
-%token   T_Do T_TypeName T_FieldSelection T_Mat2 T_Mat3 T_Mat4
+%token   T_Do T_TypeName T_Mat2 T_Mat3 T_Mat4
 /* %token   T_LeOp T_GeOp T_EqOp T_NeOp T_AndOp T_OrOp T_Dims */
 %token   T_MulAssign T_DivAssign T_AddAssign T_SubAssign
 %token   T_LeftParen T_RightParen T_LeftBrace T_RightBrace T_Dot
@@ -132,7 +130,7 @@ void yyerror(const char *msg); // standard error-handling routine
 %token   <integerConstant> T_IntConstant
 %token   <floatConstant> T_FloatConstant
 %token   <boolConstant> T_BoolConstant
-%token   <identifier> T_Field_Selection
+%token   <identifier> T_FieldSelection
 
 
 /* Non-terminal types
@@ -146,7 +144,7 @@ void yyerror(const char *msg); // standard error-handling routine
  * of the union named "declList" which is of type List<Decl*>.
  * pp2: You'll need to add many of these of your own.
  */
-%type <declList>  DeclList 
+%type <declList>  DeclList
 %type <decl>      Decl
 %type <ident> Var_Ident
 %type <expr> Prim_Expr
@@ -242,11 +240,11 @@ Prim_Expr :    Var_Ident { $$ = new VarExpr(@1,$1); }
           |    T_IntConstant { $$ = new IntConstant(@1,$1); }
           |    T_FloatConstant { $$ = new FloatConstant(@1,$1); }
           |    T_BoolConstant { $$ = new BoolConstant(@1,$1); }
-          |    '(' Expr ')' { $$ = $2; }
+          |    T_LeftParen Expr T_RightParen { $$ = $2; }
           ;
 
 Post_Expr :    Prim_Expr { $$ = $1; }
-          |    Post_Expr '.' T_Field_Selection { $$ = new FieldAccess($1,new Identifier(@3,$3)); }
+          |    Post_Expr T_Dot T_FieldSelection { $$ = new FieldAccess($1,new Identifier(@3,$3)); }
           |    Post_Expr T_Inc { $$ = new PostfixExpr($1,new Operator(@2,"++")); }
           |    Post_Expr T_Dec { $$ = new PostfixExpr($1,new Operator(@2,"--")); }
           ;
@@ -264,26 +262,26 @@ Un_Expr   :    Post_Expr { $$ = $1; }
           |    Un_Op Un_Expr { $$ = new ArithmeticExpr($1,$2); }
           ;
 
-Un_Op     :    '+' { $$ = new Operator(@1,"+"); }
-          |    '-' { $$ = new Operator(@1,"-"); }
+Un_Op     :    T_Plus { $$ = new Operator(@1,"+"); }
+          |    T_Dash { $$ = new Operator(@1,"-"); }
           ;
 
 Mult_Expr :    Un_Expr { $$ = $1; }
-          |    Mult_Expr '*' Un_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"*"),$3); }
-          |    Mult_Expr '/' Un_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"/"),$3); }
+          |    Mult_Expr T_Star Un_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"*"),$3); }
+          |    Mult_Expr T_Slash Un_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"/"),$3); }
           ;
 
 Add_Expr  :    Mult_Expr { $$ = $1; }
-          |    Add_Expr '+' Mult_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"+"),$3); }
-          |    Add_Expr '-' Mult_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"-"),$3); }
+          |    Add_Expr T_Plus Mult_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"+"),$3); }
+          |    Add_Expr T_Dash Mult_Expr { $$ = new ArithmeticExpr($1,new Operator(@2,"-"),$3); }
           ;
 
 Sh_Expr   :    Add_Expr { $$ = $1; }
           ;
 
 Rela_Expr :    Sh_Expr { $$ = $1; }
-          |    Rela_Expr '<' Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,"<"),$3); }
-          |    Rela_Expr '>' Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,">"),$3); }
+          |    Rela_Expr T_LeftAngle Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,"<"),$3); }
+          |    Rela_Expr T_RightAngle Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,">"),$3); }
           |    Rela_Expr T_LessEqual Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,"<="),$3); }
           |    Rela_Expr T_GreaterEqual Sh_Expr { $$ = new RelationalExpr($1,new Operator(@2,">="),$3); }
           ;
@@ -318,9 +316,13 @@ Cond_Expr :    Log_Or_Expr { $$ = $1; }
 
 Assign_Expr   :    Cond_Expr { $$ = $1; }
               |    Un_Expr Assign_Op Assign_Expr { $$ = new AssignExpr($1,$2,$3); }
+	      |    Un_Expr Assign_Op Type_Spec T_LeftParen Cond_Expr T_RightParen {
+	             List<Expr*> *callList = new List<Expr*>();
+                     callList->Append($5);
+                     $$ = new AssignExpr($1,$2,new Call(@5,NULL,new Identifier(@3,$3->getTypeName()),callList)); }
               ;
 
-Assign_Op :    '=' { $$ = new Operator(@1,"="); }
+Assign_Op :    T_Equal { $$ = new Operator(@1,"="); }
           |    T_MulAssign { $$ = new Operator(@1,"*="); }
           |    T_DivAssign { $$ = new Operator(@1,"/="); }
           |    T_AddAssign { $$ = new Operator(@1,"+="); }
@@ -333,11 +335,11 @@ Expr      :    Assign_Expr { $$ = $1; }
 Const_Expr    :    Cond_Expr { $$ = $1; }
               ;
 
-Decl      :    Fn_Proto ';' { $$ = $1; }
-          |    Init_DeclorList ';' { $$ = $1; }
+Decl      :    Fn_Proto T_Semicolon { $$ = $1; }
+          |    Init_DeclorList { $$ = $1; }
           ;
 
-Fn_Proto  :    Fn_Declor ')' { $$ = $1; }
+Fn_Proto  :    Fn_Declor T_RightParen { $$ = $1; }
           ;
 
 Fn_Declor :    Fn_Hdr { $$ = new FnDecl($1.id,$1.tp,new List<VarDecl*>()); }
@@ -352,7 +354,7 @@ Fn_Hdr_Param  :    Fn_Hdr Param_Decl {
                     $$.pList->Append($3); }
               ;
 
-Fn_Hdr    :    Full_Spec_T  T_Identifier '(' {
+Fn_Hdr    :    Full_Spec_T  T_Identifier T_LeftParen {
                     $$.tp = $1;
                     $$.id = new Identifier(@2,$2),$1;}
           ;
@@ -367,7 +369,7 @@ Param_Decl    :    Param_Declor { $$ = $1; }
 Param_T_Spec  :    Type_Spec { $$ = $1; }
               ;
 
-Init_DeclorList    :    Sing_Decl { $$ = $1; }
+Init_DeclorList    :    Sing_Decl T_Semicolon { $$ = $1; }
                    ;
 
 Sing_Decl :    Full_Spec_T T_Identifier { $$ = new VarDecl(new Identifier(@2,$2),$1); }
@@ -382,6 +384,7 @@ Type_Spec :    Type_Spec_NArr { $$ = $1; }
 Type_Spec_NArr :    T_Void { $$ = Type::voidType; }
                |    T_Float { $$ = Type::floatType; }
                |    T_Int { $$ = Type::intType; }
+	       |    T_Bool { $$ = Type::boolType; }
                |    T_Vec2 { $$ = Type::vec2Type; }
                |    T_Vec3 { $$ = Type::vec3Type; }
                |    T_Vec4 { $$ = Type::vec4Type; }
@@ -415,12 +418,12 @@ Simp_Stmt     :    Expr_Stmt { $$ = $1; }
               |    Iter_Stmt { $$ = $1; }
               ;
 
-Comp_Stmt_Scope   : '{' '}' { $$ = NULL; }
-                  | '{' StmtList '}' { $$ = new StmtBlock($2.vList,$2.sList); }
+Comp_Stmt_Scope   : T_LeftBrace T_RightBrace { $$ = new StmtBlock(new List<VarDecl*>(),new List<Stmt*>()); }
+                  | T_LeftBrace StmtList T_RightBrace { $$ = new StmtBlock($2.vList,$2.sList); }
                   ;
 
-Comp_Stmt_No_Scope : '{' '}' { $$ = NULL; }
-		   | '{' StmtList '}' { $$ = new StmtBlock($2.vList,$2.sList); }
+Comp_Stmt_No_Scope : T_LeftBrace T_RightBrace { $$ = new StmtBlock(new List<VarDecl*>(),new List<Stmt*>()); }
+		   | T_LeftBrace StmtList T_RightBrace { $$ = new StmtBlock($2.vList,$2.sList); }
 		   ;
 
 StmtList  :    Stmt {
@@ -429,13 +432,15 @@ StmtList  :    Stmt {
           |    StmtList Stmt {
                 $$ = $1;
                 $$.sList->Append($2); }
+	  | Init_DeclorList { $$.sList = new List<Stmt*>(); ($$.vList = new List<VarDecl*>)->Append($1); }
+	  | StmtList Init_DeclorList { $$ = $1; $$.vList->Append($2); }
           ;
 
-Expr_Stmt :   ';' { $$ = new EmptyExpr(); }
-          |    Expr ';' { $$ = $1; }
+Expr_Stmt :    T_Semicolon { $$ = new EmptyExpr(); }
+          |    Expr T_Semicolon { $$ = $1; }
           ;
 
-Sel_Stmt  :    T_If '(' Expr ')' Sel_Rest_Stmt { $$ = new IfStmt($3,$5.thenB,$5.elseB); }
+Sel_Stmt  :    T_If T_LeftParen Expr T_RightParen Sel_Rest_Stmt { $$ = new IfStmt($3,$5.thenB,$5.elseB); }
           ;
 
 Sel_Rest_Stmt  :    Stmt_Scope T_Else Stmt_Scope {
@@ -452,21 +457,21 @@ Cond      :    Expr { $$ = $1; }
                     $$ = new AssignExpr(new VarExpr(@2,new Identifier(@2,$2)), new Operator(@3,"=="),$4); }
           ;
 
-Swi_Stmt  :    T_Switch '(' Expr ')' '{' Swi_StmtList '}' { }
+Swi_Stmt  :    T_Switch T_LeftParen Expr T_RightParen T_LeftBrace Swi_StmtList T_RightBrace { }
           ;
 
 Swi_StmtList   :    StmtList { $$ = $1; }
                ;
 
-Case_Lbl  :    T_Case T_IntConstant ':' { $$ = new IntConstant(@2,$2); }
-          |    T_Default ':' { }
+Case_Lbl  :    T_Case T_IntConstant T_Colon { $$ = new IntConstant(@2,$2); }
+          |    T_Default T_Colon { }
           ;
 
 Case_Stmt :    Case_Lbl Swi_StmtList { $$ = new Case($1,$2.sList); }
           ;
 
-Iter_Stmt :    T_While '(' Cond ')' Stmt { $$ = new WhileStmt($3,$5); }
-          |    T_For '(' For_Init_Stmt For_Rest_Stmt ')' Stmt_No_Scope { $$ = new ForStmt($3,$4.test,$4.step,$6); }
+Iter_Stmt :    T_While T_LeftParen Cond T_RightParen Stmt { $$ = new WhileStmt($3,$5); }
+          |    T_For T_LeftParen For_Init_Stmt For_Rest_Stmt T_RightParen Stmt_No_Scope { $$ = new ForStmt($3,$4.test,$4.step,$6); }
           ;
 
 For_Init_Stmt  :    Expr_Stmt { $$ = $1; }
@@ -475,10 +480,10 @@ For_Init_Stmt  :    Expr_Stmt { $$ = $1; }
 Cond_Op   :    Cond { $$ = $1; }
           ;
 
-For_Rest_Stmt  :    Cond_Op ';' {
+For_Rest_Stmt  :    Cond_Op T_Semicolon {
                         $$.test = $1;
                         $$.step = NULL; }
-               |    Cond_Op ';' Expr {
+               |    Cond_Op T_Semicolon Expr {
                         $$.test = $1;
                         $$.step = $3; }
                ;

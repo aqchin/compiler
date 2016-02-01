@@ -55,7 +55,8 @@ OPERATOR	  ([%,![\]])
 BEG_COMMENT       ("/*")
 END_COMMENT       ("*/")
 SINGLE_COMMENT    ("//"[^\n]*)
-SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW])
+/* SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW]) */
+SWIZZLE           ([xXyYzZwW]{1,4})
 
 %%             /* BEGIN RULES SECTION */
 
@@ -134,7 +135,9 @@ SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW])
 ">"		    { return T_RightAngle;  }
 
 "."		    { BEGIN(FIELDS); return T_Dot;		}
-<FIELDS>{SWIZZLE}   { BEGIN(N); return T_FieldSelection; 	}
+<FIELDS>{SWIZZLE}   { BEGIN(N); 
+                      strncpy(yylval.identifier, yytext, MaxIdentLen);
+                      return T_FieldSelection; 	}
 <FIELDS>.	    { ReportError::Formatted(&yylloc, yytext);
 						      return 0; }
 
