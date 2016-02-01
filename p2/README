@@ -1,9 +1,38 @@
-[ Project 2 (?) README ]
+[ Project 2 README ]
 
 [ TEAM ]
 Hubert Hsiung, A10795582
 Alan Chin, A10843563
 
+[ ERROR HANDLING EXPLORATIONS ]
+In terms of error reporting, we added one case in scanner.l for swizzle
+(.xyzw). If the identifier after the dot (.) was not some combination of
+xyzw. In this case, when some invalid identifier (non 1-4 combination of
+xyzw) is after the dot (.), it will throw a ReportError::Formatted() error.
+
 [ HIGH LEVEL OVERVIEW ]
+In scanner.l, everything is similar to pa1 except for the addition of new
+keywords and such. For example, the Field Selection was added, as well
+as individual characters like '*' and '+' returning a 'T_Star' and 'T_Plus'
+type token.
+
+In parser.y, we first set up the union, tokens, and types with all
+necessary items. The elements in the union section help define the purpose
+of the types and tokens, inheriting their values from the yylval which is
+modified by the scanner. Most of the non-terminals can be broken down in to
+expressions, types, statements, and declarations.
+
+For the rules, the first thing we did was set up empty tree nodes based on
+GLSL chapter 10. Initially, we analyzed each individual entry before the
+professor highlighted the ones we needed, which saved us a lot of trouble.
+For convenience, we also set up some structs such as the function header
+and its parameters for easier access to their properties. We also decided
+that the switch expressions have to be set up differently from what the
+GLSL page suggested since we could not access the default argument of it
+clearly. We also had to create a special case for Assign Expression when
+adding the constructor-based initializers, for example v = vec2(1.0).
+
+In conclusion, the project took much longer than we thought. We will do our
+best to start earlier next time!
 
 [ END OF README ]
