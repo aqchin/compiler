@@ -94,6 +94,8 @@ void yyerror(const char *msg); // standard error-handling routine
     BoolConstant *bConstant;
     FloatConstant *fConstant;
     Case *cas;
+    Default *def;
+    List<Case*> *cList;
     Program *program;
 
     struct Function func;
@@ -198,6 +200,8 @@ void yyerror(const char *msg); // standard error-handling routine
 %type <stmtBlk> Swi_StmtList
 %type <intConstant> Case_Lbl
 %type <cas> Case_Stmt
+%type <def> Def_Stmt
+%type <cList> CaseList
 %type <loopStmt> Iter_Stmt
 %type <expr> For_Init_Stmt
 %type <expr> Cond_Op
@@ -414,7 +418,6 @@ Stmt_Scope    : Comp_Stmt_No_Scope { $$ = $1; }
 Simp_Stmt     :    Expr_Stmt { $$ = $1; }
               |    Sel_Stmt { $$ = $1; }
               |    Swi_Stmt { $$ = $1; }
-              |    Case_Stmt { $$ = $1; }
               |    Iter_Stmt { $$ = $1; }
               ;
 
@@ -457,18 +460,26 @@ Cond      :    Expr { $$ = $1; }
                     $$ = new AssignExpr(new VarExpr(@2,new Identifier(@2,$2)), new Operator(@3,"=="),$4); }
           ;
 
-Swi_Stmt  :    T_Switch T_LeftParen Expr T_RightParen T_LeftBrace Swi_StmtList T_RightBrace { }
-          ;
+Swi_Stmt : T_Switch T_LeftParen Expr T_RightParen T_LeftBrace CaseList T_RightBrace { $$ = new SwitchStmt($3,$6,NULL); }
+	 | T_Switch T_LeftParen Expr T_RightParen T_LeftBrace CaseList Def_Stmt T_RightBrace { $$ = new SwitchStmt($3,$6,$7); }
+	 ;
 
 Swi_StmtList   :    StmtList { $$ = $1; }
                ;
 
+CaseList : Case_Stmt { ($$ = new List<Case*>())->Append($1); }
+	 | CaseList Case_Stmt { ($$=$1)->Append($2); }
+	 ;
+
 Case_Lbl  :    T_Case T_IntConstant T_Colon { $$ = new IntConstant(@2,$2); }
-          |    T_Default T_Colon { }
           ;
 
 Case_Stmt :    Case_Lbl Swi_StmtList { $$ = new Case($1,$2.sList); }
           ;
+
+Def_Stmt : T_Default T_Colon Swi_StmtList { $$ = new Default($3.sList); }
+	 ;
+
 
 Iter_Stmt :    T_While T_LeftParen Cond T_RightParen Stmt { $$ = new WhileStmt($3,$5); }
           |    T_For T_LeftParen For_Init_Stmt For_Rest_Stmt T_RightParen Stmt_No_Scope { $$ = new ForStmt($3,$4.test,$4.step,$6); }
