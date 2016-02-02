@@ -146,13 +146,10 @@ void yyerror(const char *msg); // standard error-handling routine
  * of the union named "declList" which is of type List<Decl*>.
  * pp2: You'll need to add many of these of your own.
  */
-%type <declList>  DeclList
 %type <decl>      Decl
 %type <ident> Var_Ident
 %type <expr> Prim_Expr
 %type <expr> Post_Expr
-%type <expr> Int_Expr
-%type <ident> Fn_Ident
 %type <expr> Un_Expr
 %type <op> Un_Op
 %type <expr> Mult_Expr
@@ -170,7 +167,6 @@ void yyerror(const char *msg); // standard error-handling routine
 %type <expr> Assign_Expr
 %type <op> Assign_Op
 %type <expr> Expr
-%type <expr> Const_Expr
 %type <fnDecl> Fn_Proto
 %type <fnDecl> Fn_Declor
 %type <funcParam> Fn_Hdr_Param
@@ -196,7 +192,7 @@ void yyerror(const char *msg); // standard error-handling routine
 %type <ifStmt> Sel_Stmt
 %type <teStmt> Sel_Rest_Stmt
 %type <expr> Cond
-%type <switchStmt> Swi_Stmt /* incomplete */
+%type <switchStmt> Swi_Stmt
 %type <stmtBlk> Swi_StmtList
 %type <intConstant> Case_Lbl
 %type <cas> Case_Stmt
@@ -233,10 +229,6 @@ Program   :    Trans_U              {
                                     }
           ;
 
-DeclList  :    DeclList Decl        { ($$=$1)->Append($2); }
-          |    Decl                 { ($$ = new List<Decl*>)->Append($1); }
-          ;
-
 Var_Ident :    T_Identifier { $$ = new Identifier(@1,$1); }
 	      ;
 
@@ -251,13 +243,6 @@ Post_Expr :    Prim_Expr { $$ = $1; }
           |    Post_Expr T_Dot T_FieldSelection { $$ = new FieldAccess($1,new Identifier(@3,$3)); }
           |    Post_Expr T_Inc { $$ = new PostfixExpr($1,new Operator(@2,"++")); }
           |    Post_Expr T_Dec { $$ = new PostfixExpr($1,new Operator(@2,"--")); }
-          ;
-
-Int_Expr  :    Expr { $$ = $1; }
-          ;
-
-Fn_Ident  :    Type_Spec { $$ = new Identifier(@1,$1->getTypeName()); }
-          |    Post_Expr { $$ = $1; }
           ;
 
 Un_Expr   :    Post_Expr { $$ = $1; }
@@ -335,9 +320,6 @@ Assign_Op :    T_Equal { $$ = new Operator(@1,"="); }
 
 Expr      :    Assign_Expr { $$ = $1; }
           ;
-
-Const_Expr    :    Cond_Expr { $$ = $1; }
-              ;
 
 Decl      :    Fn_Proto T_Semicolon { $$ = $1; }
           |    Init_DeclorList { $$ = $1; }

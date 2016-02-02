@@ -50,12 +50,10 @@ INTEGER           ({DIGIT}+)
 EXPONENT          ([Ee][-+]?{INTEGER})
 FLOAT             ({INTEGER}"."{DIGIT}*[fF]?)
 IDENTIFIER        ([a-zA-Z][a-zA-Z_0-9]*)
-/* OPERATOR          ([-+/*%=.,;!<>()[\]{}:]) */
 OPERATOR	  ([%,![\]])
 BEG_COMMENT       ("/*")
 END_COMMENT       ("*/")
 SINGLE_COMMENT    ("//"[^\n]*)
-/* SWIZZLE           (([xX][yY]?[zZ]?[wW]?)|([yY][zZ]?[wW]?)|([zZ][wW]?)|[wW]) */
 SWIZZLE           ([xXyYzZwW]{1,4})
 
 %%             /* BEGIN RULES SECTION */
