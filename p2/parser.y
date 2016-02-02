@@ -126,7 +126,7 @@ void yyerror(const char *msg); // standard error-handling routine
 %token   T_MulAssign T_DivAssign T_AddAssign T_SubAssign
 %token   T_LeftParen T_RightParen T_LeftBrace T_RightBrace T_Dot
 %token   T_Colon T_Equal T_Semicolon T_Dash T_Plus T_Star T_Slash
-%token   T_LeftAngle T_RightAngle
+%token   T_LeftAngle T_RightAngle T_NoElse
 
 %token   <identifier> T_Identifier
 %token   <integerConstant> T_IntConstant
@@ -207,8 +207,8 @@ void yyerror(const char *msg); // standard error-handling routine
 %type <fnDecl> Fn_Def
 %type <program> Program
 
-%nonassoc NOELSE
-%nonassoc T_ELSE
+%nonassoc T_NoElse
+%nonassoc T_Else
 
 %%
 /* Rules
@@ -431,7 +431,7 @@ Sel_Stmt  :    T_If T_LeftParen Expr T_RightParen Sel_Rest_Stmt { $$ = new IfStm
 Sel_Rest_Stmt  :    Stmt_Scope T_Else Stmt_Scope {
                         $$.thenB = $1;
                         $$.elseB = $3; }
-               |    Stmt_Scope %prec NOELSE {
+               |    Stmt_Scope %prec T_NoElse {
                         $$.thenB = $1;
                         $$.elseB = NULL; }
                ;
