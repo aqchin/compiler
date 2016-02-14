@@ -16,6 +16,9 @@
 #include "list.h"
 #include <iostream>
 
+#include <map>
+#include <string>
+
 using namespace std;
 
 class Type : public Node 
@@ -66,5 +69,4 @@ class ArrayType : public Type
     void PrintToStream(ostream& out) { out << elemType << "[]"; }
 };
 
- 
 #endif

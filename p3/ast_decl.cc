@@ -5,7 +5,7 @@
 #include "ast_decl.h"
 #include "ast_type.h"
 #include "ast_stmt.h"
-        
+#include "errors.h"
          
 Decl::Decl(Identifier *n) : Node(*n->GetLocation()) {
     Assert(n != NULL);
@@ -21,6 +21,17 @@ VarDecl::VarDecl(Identifier *n, Type *t) : Decl(n) {
 void VarDecl::PrintChildren(int indentLevel) { 
    if (type) type->Print(indentLevel+1);
    if (id) id->Print(indentLevel+1);
+}
+
+void VarDecl::Check() {
+  int i;
+  for(i = 0; i < st_list->NumElements(); i++) {
+    if(st_list->Nth(i)->exists(this->id->GetName())) {
+      ReportError::DeclConflict(this, 
+        dynamic_cast<Decl*>(st_list->Nth(i)->lookup(this->id->GetName())));
+    }
+  }
+  st_list->Nth(st_list->NumElements()-1)->insert(this->id->GetName(), this);
 }
 
 
@@ -42,4 +53,6 @@ void FnDecl::PrintChildren(int indentLevel) {
     if (body) body->Print(indentLevel+1, "(body) ");
 }
 
+void FnDecl::Check() {
 
+}

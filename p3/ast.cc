@@ -8,6 +8,8 @@
 #include <string.h> // strdup
 #include <stdio.h>  // printf
 
+List<Symbol*> *Node::st_list = new List<Symbol*>();
+
 Node::Node(yyltype loc) {
     location = new yyltype(loc);
     parent = NULL;
@@ -44,4 +46,19 @@ Identifier::Identifier(yyltype loc, const char *n) : Node(loc) {
 
 void Identifier::PrintChildren(int indentLevel) {
     printf("%s", name);
+}
+
+void Symbol::insert(char* c, Node* n) {
+  string str(c);
+  st_map.insert(pair<string, Node*>(str, n));
+}
+
+Node* Symbol::lookup(char* c) const {
+  string str(c);
+  return st_map.at(str);
+}
+
+bool Symbol::exists(char* c) const {
+  string str(c);
+  return (st_map.count(str) > 0);
 }

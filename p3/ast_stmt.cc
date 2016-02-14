@@ -26,6 +26,12 @@ void Program::Check() {
      *      checking itself, which makes for a great use of inheritance
      *      and polymorphism in the node classes.
      */
+    st_list->Append(new Symbol());
+
+    int i;
+    for(i = 0; i < decls->NumElements(); i++) {
+      decls->Nth(i)->Check();
+    }
 
     // sample test - not the actual working code
     // replace it with your own implementation

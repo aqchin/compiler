@@ -41,7 +41,22 @@
 #include "location.h"
 #include <iostream>
 
+#include "list.h"
+#include <map>
+#include <string>
+
 using namespace std;
+
+class Symbol {
+  protected:
+    map<string, Node*> st_map;
+
+  public:
+    Symbol() {}
+    void insert(char*, Node*);
+    Node* lookup(char*) const;
+    bool exists(char*) const;
+};
 
 class Node  {
   protected:
@@ -49,6 +64,8 @@ class Node  {
     Node *parent;
 
   public:
+    static List<Symbol*> *st_list;
+
     Node(yyltype loc);
     Node();
     virtual ~Node() {}
@@ -76,6 +93,7 @@ class Identifier : public Node
     const char *GetPrintNameForNode()   { return "Identifier"; }
     void PrintChildren(int indentLevel);
     friend ostream& operator<<(ostream& out, Identifier *id) { return out << id->name; }
+    char* GetName() { return name; }
 };
 
 
@@ -90,7 +108,5 @@ class Error : public Node
     Error() : Node() {}
     const char *GetPrintNameForNode()   { return "Error"; }
 };
-
-
 
 #endif

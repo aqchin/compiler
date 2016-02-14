@@ -53,5 +53,3 @@ ArrayType::ArrayType(yyltype loc, Type *et) : Type(loc) {
 void ArrayType::PrintChildren(int indentLevel) {
     elemType->Print(indentLevel+1);
 }
-
-
