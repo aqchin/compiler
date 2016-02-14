@@ -50,7 +50,10 @@ void Identifier::PrintChildren(int indentLevel) {
 
 void Symbol::insert(char* c, Node* n) {
   string str(c);
-  st_map.insert(pair<string, Node*>(str, n));
+  if(exists(c)) {
+    st_map.at(str) = n;
+  }
+  else st_map.insert(pair<string, Node*>(str, n));
 }
 
 Node* Symbol::lookup(char* c) const {

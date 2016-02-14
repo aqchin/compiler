@@ -53,6 +53,20 @@ void StmtBlock::PrintChildren(int indentLevel) {
     stmts->PrintAll(indentLevel+1);
 }
 
+void StmtBlock::Check() {
+  int i;
+  for(i = 0; i < stmts->NumElements(); i++) {
+    if(strcmp("StmtBlock", stmts->Nth(i)->GetPrintNameForNode()) != 0) {
+      stmts->Nth(i)->Check();
+    }
+    else {
+      st_list->Append(new Symbol());
+      stmts->Nth(i)->Check();
+      st_list->RemoveAt(st_list->NumElements()-1);
+    }
+  }
+}
+
 DeclStmt::DeclStmt(Decl *d) {
     Assert(d != NULL);
     (decl=d)->SetParent(this);

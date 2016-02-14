@@ -25,13 +25,14 @@ void VarDecl::PrintChildren(int indentLevel) {
 
 void VarDecl::Check() {
   int i;
-  for(i = 0; i < st_list->NumElements(); i++) {
-    if(st_list->Nth(i)->exists(this->id->GetName())) {
+  for(i = st_list->NumElements()-1; i >= 0 ; i--) {
+    if(st_list->Nth(i)->exists(this->GetId()->GetName())) {
       ReportError::DeclConflict(this, 
         dynamic_cast<Decl*>(st_list->Nth(i)->lookup(this->id->GetName())));
+      break;
     }
   }
-  st_list->Nth(st_list->NumElements()-1)->insert(this->id->GetName(), this);
+  st_list->Nth(st_list->NumElements()-1)->insert(this->id->GetName(), (Node*)this);
 }
 
 
@@ -54,5 +55,25 @@ void FnDecl::PrintChildren(int indentLevel) {
 }
 
 void FnDecl::Check() {
+  if(st_list->Nth(st_list->NumElements()-1)->exists(this->GetId()->GetName())) {
+    ReportError::DeclConflict(this,
+      dynamic_cast<Decl*>(st_list->Nth(st_list->NumElements()-1)->lookup(
+        this->id->GetName())));
+  }
+  st_list->Nth(st_list->NumElements()-1)->insert(this->id->GetName(), (Node*)this);
 
+  st_list->Append(new Symbol());
+  int i;
+  for(i = 0; i < formals->NumElements(); i++) {
+    if(st_list->Nth(st_list->NumElements()-1)->exists(formals->Nth(i)->GetId()->GetName())) {
+      ReportError::DeclConflict(formals->Nth(i), dynamic_cast<Decl*>(
+        st_list->Nth(st_list->NumElements()-1)->lookup(formals->Nth(i)->GetId()->GetName())));
+    }
+    st_list->Nth(st_list->NumElements()-1)->insert(
+      formals->Nth(i)->GetId()->GetName(),formals->Nth(i));
+  }
+  StmtBlock* sb = dynamic_cast<StmtBlock*>(body);
+
+  //body->Check();
+  st_list->RemoveAt(st_list->NumElements()-1);
 }
