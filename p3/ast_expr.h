@@ -110,7 +110,7 @@ class VarExpr : public Expr
     void PrintChildren(int indentLevel);
 
     Type* GetType();
-    void Check() {}
+    void Check();
 };
 
 class Operator : public Node 
@@ -149,6 +149,7 @@ class ArithmeticExpr : public CompoundExpr
     ArithmeticExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
     const char *GetPrintNameForNode() { return "ArithmeticExpr"; }
 
+    Type* GetType();
     void Check();
 };
 
@@ -158,6 +159,7 @@ class RelationalExpr : public CompoundExpr
     RelationalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "RelationalExpr"; }
 
+    Type* GetType();
     void Check();
 };
 
@@ -167,6 +169,7 @@ class EqualityExpr : public CompoundExpr
     EqualityExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "EqualityExpr"; }
 
+    Type* GetType();
     void Check();
 };
 

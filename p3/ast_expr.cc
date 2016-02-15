@@ -52,14 +52,47 @@ Type* VarExpr::GetType() {
 
   if(!n) return Type::errorType;
 
+
   DeclStmt* ds = dynamic_cast<DeclStmt*>(n);
   if(ds) {
     VarDecl* vd = dynamic_cast<VarDecl*>(ds->GetDecl());
-      if(vd) return vd->GetType();
-      else return Type::errorType;
+    if(vd) return vd->GetType();
   }
   else {
-    return Type::errorType;
+    VarDecl* vd = dynamic_cast<VarDecl*>(n);
+    if(vd) return vd->GetType();
+  }
+  return Type::errorType;
+}
+
+void VarExpr::Check() {
+  Node* n = NULL;
+
+  int i;
+  for(i = st_list->NumElements()-1; i >= 0; i--) {
+    n = st_list->Nth(i)->lookup(id->GetName());
+    if(n) break;
+  }
+
+  if(!n) {
+    ReportError::IdentifierNotDeclared(id, LookingForVariable);
+    return;
+  }
+
+  DeclStmt* ds = dynamic_cast<DeclStmt*>(n);
+  if(ds) {
+    VarDecl* vd = dynamic_cast<VarDecl*>(ds->GetDecl());
+    if(!vd) {
+      ReportError::IdentifierNotDeclared(id, LookingForType);
+      return;
+    }
+  }
+  else {
+    VarDecl* vd = dynamic_cast<VarDecl*>(n);
+    if(!vd) {
+      ReportError::IdentifierNotDeclared(id, LookingForType);
+      return;
+    }
   }
 }
 
@@ -139,6 +172,18 @@ Type* CompoundExpr::GetType() {
   return r;
 }
 
+Type* ArithmeticExpr::GetType() {
+  Type* r = right->GetType();
+
+  if(left) {
+    Type* l = left->GetType();
+    if( !(l->IsEquivalentTo(r)) ) return Type::errorType;
+  }
+  if(r->IsEquivalentTo(Type::intType)) return Type::intType;
+  else if(r->IsEquivalentTo(Type::floatType)) return Type::floatType;
+  else return Type::errorType;
+}
+
 void ArithmeticExpr::Check() {
   Type* r = right->GetType();
 
@@ -157,23 +202,41 @@ void ArithmeticExpr::Check() {
   }
 }
 
+Type* RelationalExpr::GetType() {
+  Type* r = right->GetType();
+  Type* l = left->GetType();
+
+  if(!(l->IsEquivalentTo(r)) ||
+     !((l->IsEquivalentTo(Type::intType)) ||
+       (l->IsEquivalentTo(Type::floatType))) )
+    return Type::errorType;
+  return Type::boolType;
+}
+
 void RelationalExpr::Check() {
   Type* r = right->GetType();
   Type* l = left->GetType();
 
   if(!(l->IsEquivalentTo(r)) ||
-     !(l->IsEquivalentTo(Type::boolType)) ||
-     !(r->IsEquivalentTo(Type::boolType)) )
+     !((l->IsEquivalentTo(Type::intType)) ||
+       (l->IsEquivalentTo(Type::floatType))) )
     ReportError::IncompatibleOperands(op, l, r);
+}
+
+Type* EqualityExpr::GetType() {
+  Type* r = right->GetType();
+  Type* l = left->GetType();
+
+  if(!(l->IsEquivalentTo(r)) )
+    return Type::errorType;
+  return Type::boolType;
 }
 
 void EqualityExpr::Check() {
   Type* r = right->GetType();
   Type* l = left->GetType();
 
-  if(!(l->IsEquivalentTo(r)) ||
-     !(l->IsEquivalentTo(Type::boolType)) ||
-     !(r->IsEquivalentTo(Type::boolType)) )
+  if(!(l->IsEquivalentTo(r)) )
     ReportError::IncompatibleOperands(op, l, r);
 }
 
@@ -188,7 +251,17 @@ void LogicalExpr::Check() {
 }
 
 void AssignExpr::Check() {
+  left->Check();
+  right->Check();
 
+  Type* r = right->GetType();
+  Type* l = left->GetType();
+
+  if(!((l->IsEquivalentTo(Type::errorType)) ||
+      (r->IsEquivalentTo(Type::errorType)) ||
+      (l->IsEquivalentTo(r)))) {
+    ReportError::IncompatibleOperands(op, l, r);
+  }
 }
 
 void PostfixExpr::Check() {
@@ -237,8 +310,8 @@ void FieldAccess::Check() {
 
   int i;
   for(i = 0; i < len; i++) {
-    if(swizzle[i] != 'x' || swizzle[i] != 'y' ||
-       swizzle[i] != 'z' || swizzle[i] != 'w') {
+    if(swizzle[i] != 'x' && swizzle[i] != 'y' &&
+       swizzle[i] != 'z' && swizzle[i] != 'w') {
       ReportError::InvalidSwizzle(field, base);
       return;
     }
@@ -250,9 +323,10 @@ void FieldAccess::Check() {
       return;
     }
     else if(swizzle[i] == 'w' && (b->IsEquivalentTo(Type::vec2Type) ||
-            b->IsEquivalentTo(Type::vec3Type)))
+            b->IsEquivalentTo(Type::vec3Type))) {
       ReportError::SwizzleOutOfBound(field, base);
       return;
+    }
   }
 
   if(len > MAX_SWIZZLE_LEN)
