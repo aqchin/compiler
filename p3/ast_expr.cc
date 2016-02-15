@@ -9,6 +9,7 @@
 #include "ast_decl.h"
 
 #include "errors.h"
+#define MAX_SWIZZLE_LEN 4
 
 IntConstant::IntConstant(yyltype loc, int val) : Expr(loc) {
     value = val;
@@ -209,8 +210,39 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
   }
 
 void FieldAccess::Check() {
+  char* swizzle = field->GetName();
   Type* b = base->GetType();
+  const int len = strlen(swizzle);
+  
+  if(!( (b->IsEquivalentTo(Type::vec2Type)) ||
+        (b->IsEquivalentTo(Type::vec3Type)) ||
+	(b->IsEquivalentTo(Type::vec4Type)) )) {
+    ReportError::InaccessibleSwizzle(field, base);
+    return;
+  }
 
+  int i;
+  for(i = 0; i < len; i++) {
+    if(swizzle[i] != 'x' || swizzle[i] != 'y' ||
+       swizzle[i] != 'z' || swizzle[i] != 'w') {
+      ReportError::InvalidSwizzle(field, base);
+      return;
+    }
+  }
+
+  for(i = 0; i < len; i++) {
+    if(swizzle[i] == 'z' && b->IsEquivalentTo(Type::vec2Type)) {
+      ReportError::SwizzleOutOfBound(field, base);
+      return;
+    }
+    else if(swizzle[i] == 'w' && (b->IsEquivalentTo(Type::vec2Type) ||
+            b->IsEquivalentTo(Type::vec3Type)))
+      ReportError::SwizzleOutOfBound(field, base);
+      return;
+  }
+
+  if(len > MAX_SWIZZLE_LEN)
+    ReportError::OversizedVector(field, base);
 }
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
