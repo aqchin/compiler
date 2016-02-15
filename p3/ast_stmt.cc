@@ -101,10 +101,10 @@ ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
 }
 
 void ConditionalStmt::Check() {
-    if(strcmp("RelationalExpr",test->GetPrintNameForNode()) !=0 &&
-       strcmp("BoolConstant",test->GetPrintNameForNode()) !=0 &&
-       strcmp("AssignExpr",test->GetPrintNameForNode()) !=0)
+    test->Check();
+    if(!(test->GetType()->IsEquivalentTo(Type::boolType)))
         ReportError::TestNotBoolean(test);
+    body->Check();
 }
 
 ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) { 
@@ -129,7 +129,6 @@ void ForStmt::Check() {
     init->Check();
     step->Check();
     ConditionalStmt::Check();
-    body->Check();
     
     st_list->RemoveAt(st_list->NumElements()-1);
 }
@@ -142,7 +141,6 @@ void WhileStmt::PrintChildren(int indentLevel) {
 void WhileStmt::Check() {
     st_list->Append(new Symbol());
     
-    test->Check();
     ConditionalStmt::Check();
     
     st_list->RemoveAt(st_list->NumElements()-1);
@@ -162,18 +160,18 @@ void IfStmt::PrintChildren(int indentLevel) {
 
 void IfStmt::Check() {
     ConditionalStmt::Check();
-    body->Check();
     if(elseBody) elseBody->Check();
 }
 
 void BreakStmt::Check() {
     Node* curr = this;
-    while(curr->GetParent()!=NULL) {
+    while(curr->GetParent()) {
         if(strcmp("ForStmt",curr->GetParent()->GetPrintNameForNode())==0 ||
            strcmp("WhileStmt",curr->GetParent()->GetPrintNameForNode())==0) {
             st_list->RemoveAt(st_list->NumElements()-1);
             return;
-        } else curr = curr->GetParent();
+        }
+        curr = curr->GetParent();
     }
     
     ReportError::BreakOutsideLoop(this);
@@ -181,11 +179,12 @@ void BreakStmt::Check() {
 
 void ContinueStmt::Check() {
     Node* curr = this;
-    while(curr->GetParent()!=NULL) {
+    while(curr->GetParent()) {
         if(strcmp("ForStmt",curr->GetParent()->GetPrintNameForNode())==0 ||
            strcmp("WhileStmt",curr->GetParent()->GetPrintNameForNode())==0) {
             return;
-        } else curr = curr->GetParent();
+        }
+        curr = curr->GetParent();
     }
     
     ReportError::ContinueOutsideLoop(this);
@@ -202,7 +201,22 @@ void ReturnStmt::PrintChildren(int indentLevel) {
 }
 
 void ReturnStmt::Check() {
-    if(expr) expr->Check();
+    Type* tomatch;
+    Node* curr = this;
+    while(curr->GetParent()) {
+        if(strcmp("FnDecl",curr->GetParent()->GetPrintNameForNode())==0) {
+            tomatch = dynamic_cast<FnDecl*>(curr->GetParent())->GetType();
+        }
+        curr = curr->GetParent();
+    }
+    if(expr) {
+        expr->Check();
+        Type* etype = expr->GetType();
+        if(!(tomatch->IsEquivalentTo(etype)))
+            ReportError::ReturnMismatch(this, etype, tomatch);
+    } else if (!(tomatch->IsEquivalentTo(Type::voidType))) {
+        ReportError::ReturnMismatch(this, Type::voidType, tomatch);
+    }
 }
   
 SwitchLabel::SwitchLabel(Expr *l, Stmt *s) {
