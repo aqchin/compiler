@@ -47,7 +47,8 @@ class VarDecl : public Decl
     VarDecl(Identifier *name, Type *type);
     const char *GetPrintNameForNode() { return "VarDecl"; }
     void PrintChildren(int indentLevel);
-
+    
+    Type* GetType() { return type; }
     void Check();
 };
 

@@ -109,7 +109,7 @@ class VarExpr : public Expr
     const char *GetPrintNameForNode() { return "VarExpr"; }
     void PrintChildren(int indentLevel);
 
-    Type* GetType() { return new NamedType(id); }
+    Type* GetType();
     void Check() {}
 };
 
@@ -138,6 +138,7 @@ class CompoundExpr : public Expr
     void PrintChildren(int indentLevel);
     //Expr* GetTypeOf(Expr*);
     
+    Type* GetType();
     virtual void Check() = 0;
 };
 
@@ -148,7 +149,6 @@ class ArithmeticExpr : public CompoundExpr
     ArithmeticExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
     const char *GetPrintNameForNode() { return "ArithmeticExpr"; }
 
-    Type* GetType();
     void Check();
 };
 
@@ -158,7 +158,6 @@ class RelationalExpr : public CompoundExpr
     RelationalExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "RelationalExpr"; }
 
-    Type* GetType();
     void Check();
 };
 
@@ -168,7 +167,6 @@ class EqualityExpr : public CompoundExpr
     EqualityExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "EqualityExpr"; }
 
-    Type* GetType();
     void Check();
 };
 
@@ -179,7 +177,6 @@ class LogicalExpr : public CompoundExpr
     LogicalExpr(Operator *op, Expr *rhs) : CompoundExpr(op,rhs) {}
     const char *GetPrintNameForNode() { return "LogicalExpr"; }
 
-    Type* GetType();
     void Check();
 };
 
@@ -189,7 +186,6 @@ class AssignExpr : public CompoundExpr
     AssignExpr(Expr *lhs, Operator *op, Expr *rhs) : CompoundExpr(lhs,op,rhs) {}
     const char *GetPrintNameForNode() { return "AssignExpr"; }
 
-    Type* GetType();
     void Check();
 };
 
@@ -199,7 +195,6 @@ class PostfixExpr : public CompoundExpr
     PostfixExpr(Expr *lhs, Operator *op) : CompoundExpr(lhs,op) {}
     const char *GetPrintNameForNode() { return "PostfixExpr"; }
 
-    Type* GetType();
     void Check();
 };
 

@@ -40,6 +40,14 @@ void VarExpr::PrintChildren(int indentLevel) {
     id->Print(indentLevel+1);
 }
 
+Type* VarExpr::GetType() {
+  VarDecl* v = dynamic_cast<VarDecl*>(
+    st_list->Nth(st_list->NumElements()-1)->lookup(id->GetName()) );
+
+  if(v) return v->GetType();
+  else return Type::errorType;
+}
+
 Operator::Operator(yyltype loc, const char *tok) : Node(loc) {
     Assert(tok != NULL);
     strncpy(tokenString, tok, sizeof(tokenString));
@@ -101,7 +109,7 @@ Expr* CompoundExpr::GetTypeOf(Expr* e) {
 }
 */
 
-Type* ArithmeticExpr::GetType() {
+Type* CompoundExpr::GetType() {
   Type* l;
   Type* r = right->GetType();
 
@@ -113,7 +121,6 @@ Type* ArithmeticExpr::GetType() {
       return Type::errorType;
     }
   }
-
   return r;
 }
 
@@ -123,58 +130,58 @@ void ArithmeticExpr::Check() {
   if(left) {
     Type* l = left->GetType();
 
-    if(!(l->IsEquivalentTo(r)))
+    if(!(l->IsEquivalentTo(r)) ||
+       !(l->IsEquivalentTo(Type::intType)) ||
+       !(l->IsEquivalentTo(Type::floatType)) )
       ReportError::IncompatibleOperands(op, l, r);
+  }
+  else {
+    if(!( (r->IsEquivalentTo(Type::intType)) ||
+          (r->IsEquivalentTo(Type::floatType)) ))
+      ReportError::IncompatibleOperand(op, r);
   }
 }
 
-Type* RelationalExpr::GetType() {
-
-  return Type::boolType;
-}
-
 void RelationalExpr::Check() {
+  Type* r = right->GetType();
+  Type* l = left->GetType();
 
-}
-
-Type* EqualityExpr::GetType() {
-
-  return Type::boolType;
+  if(!(l->IsEquivalentTo(r)) ||
+     !(l->IsEquivalentTo(Type::boolType)) ||
+     !(r->IsEquivalentTo(Type::boolType)) )
+    ReportError::IncompatibleOperands(op, l, r);
 }
 
 void EqualityExpr::Check() {
+  Type* r = right->GetType();
+  Type* l = left->GetType();
 
-}
-
-Type* LogicalExpr::GetType() {
-
-  return Type::boolType;
+  if(!(l->IsEquivalentTo(r)) ||
+     !(l->IsEquivalentTo(Type::boolType)) ||
+     !(r->IsEquivalentTo(Type::boolType)) )
+    ReportError::IncompatibleOperands(op, l, r);
 }
 
 void LogicalExpr::Check() {
+  Type* r = right->GetType();
+  Type* l = left->GetType();
 
-}
-
-Type* AssignExpr::GetType() {
-
-  return Type::errorType;
+  if(!(l->IsEquivalentTo(r)) ||
+     !(l->IsEquivalentTo(Type::boolType)) ||
+     !(r->IsEquivalentTo(Type::boolType)) )
+    ReportError::IncompatibleOperands(op, l, r);
 }
 
 void AssignExpr::Check() {
 
 }
 
-Type* PostfixExpr::GetType() {
-
-  return Type::errorType;
-}
-
 void PostfixExpr::Check() {
+  Type* l = left->GetType();
 
-}
-
-void FieldAccess::Check() {
-
+  if(!( (l->IsEquivalentTo(Type::intType)) ||
+        (l->IsEquivalentTo(Type::floatType)) ))
+    ReportError::IncompatibleOperand(op, l);
 }
 
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
@@ -200,6 +207,11 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
     if (base) base->Print(indentLevel+1);
     field->Print(indentLevel+1);
   }
+
+void FieldAccess::Check() {
+  Type* b = base->GetType();
+
+}
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
     Assert(f != NULL && a != NULL); // b can be be NULL (just means no explicit base)
