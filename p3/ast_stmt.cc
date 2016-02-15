@@ -76,10 +76,35 @@ void DeclStmt::PrintChildren(int indentLevel) {
     decl->Print(indentLevel+1);
 }
 
+void DeclStmt::Check() {
+    char* ident = decl->GetId()->GetName();
+    if(st_list->Nth(st_list->NumElements()-1)->exists(ident)) {
+        Decl* origin;
+        if(strcmp(st_list->Nth(st_list->NumElements()-1)->lookup(ident)->
+                  GetPrintNameForNode(),"DeclStmt")!=0) {
+            origin = dynamic_cast<Decl*> (st_list->Nth(st_list->NumElements()-1)->lookup(ident));
+        } else {
+            DeclStmt* temp = dynamic_cast<DeclStmt*> (st_list->Nth(st_list->NumElements()-1)->lookup(ident));
+            origin = temp->decl;
+        }
+        
+        ReportError::DeclConflict(decl,origin);
+    }
+    
+    st_list->Nth(st_list->NumElements()-1)->insert(ident,this);
+}
+
 ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) { 
     Assert(t != NULL && b != NULL);
     (test=t)->SetParent(this); 
     (body=b)->SetParent(this);
+}
+
+void ConditionalStmt::Check() {
+    if(strcmp("RelationalExpr",test->GetPrintNameForNode()) !=0 &&
+       strcmp("BoolConstant",test->GetPrintNameForNode()) !=0 &&
+       strcmp("AssignExpr",test->GetPrintNameForNode()) !=0)
+        ReportError::TestNotBoolean(test);
 }
 
 ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) { 
@@ -98,9 +123,29 @@ void ForStmt::PrintChildren(int indentLevel) {
     body->Print(indentLevel+1, "(body) ");
 }
 
+void ForStmt::Check() {
+    st_list->Append(new Symbol());
+    
+    init->Check();
+    step->Check();
+    ConditionalStmt::Check();
+    body->Check();
+    
+    st_list->RemoveAt(st_list->NumElements()-1);
+}
+
 void WhileStmt::PrintChildren(int indentLevel) {
     test->Print(indentLevel+1, "(test) ");
     body->Print(indentLevel+1, "(body) ");
+}
+
+void WhileStmt::Check() {
+    st_list->Append(new Symbol());
+    
+    test->Check();
+    ConditionalStmt::Check();
+    
+    st_list->RemoveAt(st_list->NumElements()-1);
 }
 
 IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) { 
@@ -115,6 +160,36 @@ void IfStmt::PrintChildren(int indentLevel) {
     if (elseBody) elseBody->Print(indentLevel+1, "(else) ");
 }
 
+void IfStmt::Check() {
+    ConditionalStmt::Check();
+    body->Check();
+    if(elseBody) elseBody->Check();
+}
+
+void BreakStmt::Check() {
+    Node* curr = this;
+    while(curr->GetParent()!=NULL) {
+        if(strcmp("ForStmt",curr->GetParent()->GetPrintNameForNode())==0 ||
+           strcmp("WhileStmt",curr->GetParent()->GetPrintNameForNode())==0) {
+            st_list->RemoveAt(st_list->NumElements()-1);
+            return;
+        } else curr = curr->GetParent();
+    }
+    
+    ReportError::BreakOutsideLoop(this);
+}
+
+void ContinueStmt::Check() {
+    Node* curr = this;
+    while(curr->GetParent()!=NULL) {
+        if(strcmp("ForStmt",curr->GetParent()->GetPrintNameForNode())==0 ||
+           strcmp("WhileStmt",curr->GetParent()->GetPrintNameForNode())==0) {
+            return;
+        } else curr = curr->GetParent();
+    }
+    
+    ReportError::ContinueOutsideLoop(this);
+}
 
 ReturnStmt::ReturnStmt(yyltype loc, Expr *e) : Stmt(loc) { 
     expr = e;
@@ -124,6 +199,10 @@ ReturnStmt::ReturnStmt(yyltype loc, Expr *e) : Stmt(loc) {
 void ReturnStmt::PrintChildren(int indentLevel) {
     if ( expr ) 
       expr->Print(indentLevel+1);
+}
+
+void ReturnStmt::Check() {
+    if(expr) expr->Check();
 }
   
 SwitchLabel::SwitchLabel(Expr *l, Stmt *s) {
@@ -143,6 +222,13 @@ void SwitchLabel::PrintChildren(int indentLevel) {
     if (stmt)  stmt->Print(indentLevel+1);
 }
 
+void SwitchLabel::Check() {
+    label->Check();
+    st_list->Append(new Symbol());
+    stmt->Check();
+    st_list->RemoveAt(st_list->NumElements()-1);
+}
+
 SwitchStmt::SwitchStmt(Expr *e, List<Stmt *> *c, Default *d) {
     Assert(e != NULL && c != NULL && c->NumElements() != 0 );
     (expr=e)->SetParent(this);
@@ -155,5 +241,15 @@ void SwitchStmt::PrintChildren(int indentLevel) {
     if (expr) expr->Print(indentLevel+1);
     if (cases) cases->PrintAll(indentLevel+1);
     if (def) def->Print(indentLevel+1);
+}
+
+void SwitchStmt::Check() {
+    if(expr) expr->Check();
+    if(cases) {
+        for(int i = 0; i < cases->NumElements(); i++) {
+            cases->Nth(i)->Check();
+        }
+    }
+    if(def) def->Check();
 }
 
