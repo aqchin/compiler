@@ -188,7 +188,7 @@ void BreakStmt::Check() {
         if(strcmp("ForStmt",curr->GetParent()->GetPrintNameForNode())==0 ||
            strcmp("WhileStmt",curr->GetParent()->GetPrintNameForNode())==0 ||
            strcmp("SwitchStmt",curr->GetParent()->GetPrintNameForNode())==0) {
-            st_list->RemoveAt(st_list->NumElements()-1);
+            //st_list->RemoveAt(st_list->NumElements()-1);
             return;
         }
         curr = curr->GetParent();
