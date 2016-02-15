@@ -110,7 +110,7 @@ void DeclStmt::Check() {
         ReportError::DeclConflict(decl,origin);
     }
     
-    //st_list->Nth(st_list->NumElements()-1)->insert(ident,this);
+    st_list->Nth(st_list->NumElements()-1)->insert(ident,this);
 }
 
 ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) { 
