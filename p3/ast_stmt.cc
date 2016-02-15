@@ -186,7 +186,8 @@ void BreakStmt::Check() {
     Node* curr = this;
     while(curr->GetParent()) {
         if(strcmp("ForStmt",curr->GetParent()->GetPrintNameForNode())==0 ||
-           strcmp("WhileStmt",curr->GetParent()->GetPrintNameForNode())==0) {
+           strcmp("WhileStmt",curr->GetParent()->GetPrintNameForNode())==0 ||
+           strcmp("SwitchStmt",curr->GetParent()->GetPrintNameForNode())==0) {
             st_list->RemoveAt(st_list->NumElements()-1);
             return;
         }
