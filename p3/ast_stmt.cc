@@ -54,17 +54,36 @@ void StmtBlock::PrintChildren(int indentLevel) {
 }
 
 void StmtBlock::Check() {
-  int i;
-  for(i = 0; i < stmts->NumElements(); i++) {
-    if(strcmp("StmtBlock", stmts->Nth(i)->GetPrintNameForNode()) != 0) {
-      stmts->Nth(i)->Check();
+    FnDecl* funcDecl = NULL;
+    Node* curr = this;
+    bool need2ret = false;
+    while(curr->GetParent()) {
+        if(strcmp("FnDecl",curr->GetParent()->GetPrintNameForNode())==0) {
+            funcDecl = dynamic_cast<FnDecl*>(curr->GetParent());
+            break;
+        }
+        curr = curr->GetParent();
     }
-    else {
-      st_list->Append(new Symbol());
-      stmts->Nth(i)->Check();
-      st_list->RemoveAt(st_list->NumElements()-1);
+    if(funcDecl && !(funcDecl->GetRetType()->IsEquivalentTo(Type::voidType)))
+        need2ret = true;
+    int i;
+    for(i = 0; i < stmts->NumElements(); i++) {
+        if(strcmp("StmtBlock", stmts->Nth(i)->GetPrintNameForNode())) {
+            stmts->Nth(i)->Check();
+            if(need2ret && dynamic_cast<ReturnStmt*>(stmts->Nth(i)))
+                need2ret = false;
+        }
+        else {
+            st_list->Append(new Symbol());
+            stmts->Nth(i)->Check();
+            if(need2ret && dynamic_cast<ReturnStmt*>(stmts->Nth(i)))
+                need2ret = false;
+            st_list->RemoveAt(st_list->NumElements()-1);
+        }
     }
-  }
+    
+    if(need2ret)
+        ReportError::ReturnMissing(funcDecl);
 }
 
 DeclStmt::DeclStmt(Decl *d) {
@@ -91,7 +110,7 @@ void DeclStmt::Check() {
         ReportError::DeclConflict(decl,origin);
     }
     
-    st_list->Nth(st_list->NumElements()-1)->insert(ident,this);
+    //st_list->Nth(st_list->NumElements()-1)->insert(ident,this);
 }
 
 ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) { 
@@ -206,6 +225,7 @@ void ReturnStmt::Check() {
     while(curr->GetParent()) {
         if(strcmp("FnDecl",curr->GetParent()->GetPrintNameForNode())==0) {
             tomatch = dynamic_cast<FnDecl*>(curr->GetParent())->GetRetType();
+            break;
         }
         curr = curr->GetParent();
     }
