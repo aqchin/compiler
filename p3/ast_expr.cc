@@ -42,11 +42,25 @@ void VarExpr::PrintChildren(int indentLevel) {
 }
 
 Type* VarExpr::GetType() {
-  VarDecl* v = dynamic_cast<VarDecl*>(
-    st_list->Nth(st_list->NumElements()-1)->lookup(id->GetName()) );
+  Node* n = NULL;
 
-  if(v) return v->GetType();
-  else return Type::errorType;
+  int i;
+  for(i = st_list->NumElements()-1; i >= 0; i--) {
+    n = st_list->Nth(i)->lookup(id->GetName());
+    if(n) break;
+  }
+
+  if(!n) return Type::errorType;
+
+  DeclStmt* ds = dynamic_cast<DeclStmt*>(n);
+  if(ds) {
+    VarDecl* vd = dynamic_cast<VarDecl*>(ds->GetDecl());
+      if(vd) return vd->GetType();
+      else return Type::errorType;
+  }
+  else {
+    return Type::errorType;
+  }
 }
 
 Operator::Operator(yyltype loc, const char *tok) : Node(loc) {

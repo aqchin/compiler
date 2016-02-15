@@ -57,8 +57,11 @@ void Symbol::insert(char* c, Node* n) {
 }
 
 Node* Symbol::lookup(char* c) const {
-  string str(c);
-  return st_map.at(str);
+  if(exists(c)) {
+    string str(c);
+    return st_map.at(str);
+  }
+  return NULL;
 }
 
 bool Symbol::exists(char* c) const {
