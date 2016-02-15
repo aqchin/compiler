@@ -52,7 +52,6 @@ Type* VarExpr::GetType() {
 
   if(!n) return Type::errorType;
 
-
   DeclStmt* ds = dynamic_cast<DeclStmt*>(n);
   if(ds) {
     VarDecl* vd = dynamic_cast<VarDecl*>(ds->GetDecl());
@@ -78,6 +77,8 @@ void VarExpr::Check() {
     ReportError::IdentifierNotDeclared(id, LookingForVariable);
     return;
   }
+  
+  //cout << n->GetPrintNameForNode() << endl;
 
   DeclStmt* ds = dynamic_cast<DeclStmt*>(n);
   if(ds) {
