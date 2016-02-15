@@ -5,6 +5,44 @@ Hubert Hsiung, A10795582
 Alan Chin, A10843563
 
 [ Design Decisions ]
+For our design decisions, they were mostly influenced by the instructions
+on the write-up + extras and instructor posts on Piazza. For handling
+scoping, our program uses a List<Symbol*> structure. The List keeps track
+of each scope, which is enclosed in the Symbol class. The Symbol class has
+a std::map() as a member. The map stores a string matched to a Node* object
+pointer. This will allow us to efficiently keep track of each variable name
+and its type of Node. The List allows us to easily transition between
+different scopes because each item on the list functions as a different
+level scope. When we enter a scope, a new Symbol is appended to the end
+of the List. Similarly, when we exit the scope, the lastmost entry on the
+List is removed.
 
+Some concerns we had with the design is how quickly we put everything
+together given the time contraints due to other obligations. However, we
+managed to finish the assignment and pass all the sample tests. One thing
+that concerns us is how frequently we use the dynamic_cast<Type>() method
+to downcast Node or Expr into its varying subclasses. This can be very
+dangerous because we may accidently incorrectly downcast to the wrong
+subclass of the type. In order to avoid this, we consider all the
+possibilities the class can be downcasted into. For example, in the
+GetType() and Check() methods for VarExpr, we determined that the only
+two types that can be downcasted from VarExpr are DeclStmt and VarDecl.
+In the event that dynamic_cast fails, we make sure to check the variable
+that is assigned to the downcast for a NULL value.
+
+Another thing that concerns us is when return statements are embedded
+within logic blocks. For example:
+
+int main() {
+
+if(cond) return 1;
+
+else return true;
+
+}
+
+We managed to recognize the function declaration by cascading up through
+the parents. We hope that this is the correct approach for this type of
+situation.
 
 [ END OF README ]

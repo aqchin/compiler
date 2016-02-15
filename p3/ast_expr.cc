@@ -135,29 +135,6 @@ void CompoundExpr::PrintChildren(int indentLevel) {
    if (right) right->Print(indentLevel+1);
 }
 
-/*
-Expr* CompoundExpr::GetTypeOf(Expr* e) {
-  ComoundExpr* ce = dynamic_cast<CompoundExpr*>(e);
-  if(ce) {
-    if(ce->left) {
-      Expr* l = GetTypeOf(ce->left);
-      Expr* r = GetTypeOf(ce->right);
-
-      string str_l(l->GetPrintNameForNode());
-      string str_r(r->GetPrintNameForNode());
-
-      if(strcmp(str_l, str_r) != 0) {
-        ReportError::IncompatibleOperands(ce->op, 
-        return new ExprError();
-      }
-      else return l; // Return one of them, we only care about types
-    }
-    else return GetTypeOf(ce->right);
-  }
-  else return e;
-}
-*/
-
 Type* CompoundExpr::GetType() {
   Type* l;
   Type* r = right->GetType();
