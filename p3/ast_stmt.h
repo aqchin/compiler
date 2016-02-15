@@ -43,7 +43,7 @@ class Stmt : public Node
      Stmt() : Node() {}
      Stmt(yyltype loc) : Node(loc) {}
 
-     void Check() {}
+     virtual void Check() = 0;
 };
 
 class StmtBlock : public Stmt 

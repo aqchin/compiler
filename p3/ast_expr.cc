@@ -8,6 +8,7 @@
 #include "ast_type.h"
 #include "ast_decl.h"
 
+#include "errors.h"
 
 IntConstant::IntConstant(yyltype loc, int val) : Expr(loc) {
     value = val;
@@ -76,8 +77,106 @@ void CompoundExpr::PrintChildren(int indentLevel) {
    op->Print(indentLevel+1);
    if (right) right->Print(indentLevel+1);
 }
-   
-  
+
+/*
+Expr* CompoundExpr::GetTypeOf(Expr* e) {
+  ComoundExpr* ce = dynamic_cast<CompoundExpr*>(e);
+  if(ce) {
+    if(ce->left) {
+      Expr* l = GetTypeOf(ce->left);
+      Expr* r = GetTypeOf(ce->right);
+
+      string str_l(l->GetPrintNameForNode());
+      string str_r(r->GetPrintNameForNode());
+
+      if(strcmp(str_l, str_r) != 0) {
+        ReportError::IncompatibleOperands(ce->op, 
+        return new ExprError();
+      }
+      else return l; // Return one of them, we only care about types
+    }
+    else return GetTypeOf(ce->right);
+  }
+  else return e;
+}
+*/
+
+Type* ArithmeticExpr::GetType() {
+  Type* l;
+  Type* r = right->GetType();
+
+  if(left) {
+    l = left->GetType();
+
+    if(l->IsEquivalentTo(r)) return l;
+    else {
+      return Type::errorType;
+    }
+  }
+
+  return r;
+}
+
+void ArithmeticExpr::Check() {
+  Type* r = right->GetType();
+
+  if(left) {
+    Type* l = left->GetType();
+
+    if(!(l->IsEquivalentTo(r)))
+      ReportError::IncompatibleOperands(op, l, r);
+  }
+}
+
+Type* RelationalExpr::GetType() {
+
+  return Type::boolType;
+}
+
+void RelationalExpr::Check() {
+
+}
+
+Type* EqualityExpr::GetType() {
+
+  return Type::boolType;
+}
+
+void EqualityExpr::Check() {
+
+}
+
+Type* LogicalExpr::GetType() {
+
+  return Type::boolType;
+}
+
+void LogicalExpr::Check() {
+
+}
+
+Type* AssignExpr::GetType() {
+
+  return Type::errorType;
+}
+
+void AssignExpr::Check() {
+
+}
+
+Type* PostfixExpr::GetType() {
+
+  return Type::errorType;
+}
+
+void PostfixExpr::Check() {
+
+}
+
+void FieldAccess::Check() {
+
+}
+
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
     (base=b)->SetParent(this); 
     (subscript=s)->SetParent(this);

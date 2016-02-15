@@ -72,8 +72,14 @@ void FnDecl::Check() {
     st_list->Nth(st_list->NumElements()-1)->insert(
       formals->Nth(i)->GetId()->GetName(),formals->Nth(i));
   }
-  StmtBlock* sb = dynamic_cast<StmtBlock*>(body);
 
-  //body->Check();
+  StmtBlock* sb = dynamic_cast<StmtBlock*>(body);
+  bool flag = false;
+  Type* tmpType;
+  for(i = 0; sb->stmts->NumElements(); i++) {
+    
+  }
+
+  body->Check();
   st_list->RemoveAt(st_list->NumElements()-1);
 }
