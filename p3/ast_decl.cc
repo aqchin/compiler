@@ -73,12 +73,16 @@ void FnDecl::Check() {
       formals->Nth(i)->GetId()->GetName(),formals->Nth(i));
   }
 
-  StmtBlock* sb = dynamic_cast<StmtBlock*>(body);
-  bool flag = false;
-  Type* tmpType;
-  for(i = 0; sb->stmts->NumElements(); i++) {
-    
-  }
+    if(!(returnType->IsEquivalentTo(Type::voidType))) {
+        StmtBlock* sb = dynamic_cast<StmtBlock*>(body);
+        bool flag = true;
+        for(i = 0; sb->stmts->NumElements(); i++) {
+            if(!strcmp("ReturnStmt", sb->stmts->Nth(i)->GetPrintNameForNode()))
+                flag = false;
+        }
+        if(flag)
+            ReportError::ReturnMissing(this);
+    }
 
   body->Check();
   st_list->RemoveAt(st_list->NumElements()-1);

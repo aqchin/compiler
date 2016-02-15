@@ -73,7 +73,7 @@ class FnDecl : public Decl
     FnDecl(Identifier *name, Type *returnType, List<VarDecl*> *formals);
     void SetFunctionBody(Stmt *b);
     const char *GetPrintNameForNode() { return "FnDecl"; }
-    Type* GetType() { return returnType; }
+    Type* GetRetType() { return returnType; }
     void PrintChildren(int indentLevel);
 
     void Check();

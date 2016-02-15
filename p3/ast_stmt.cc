@@ -205,7 +205,7 @@ void ReturnStmt::Check() {
     Node* curr = this;
     while(curr->GetParent()) {
         if(strcmp("FnDecl",curr->GetParent()->GetPrintNameForNode())==0) {
-            tomatch = dynamic_cast<FnDecl*>(curr->GetParent())->GetType();
+            tomatch = dynamic_cast<FnDecl*>(curr->GetParent())->GetRetType();
         }
         curr = curr->GetParent();
     }
