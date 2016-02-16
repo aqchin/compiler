@@ -218,12 +218,21 @@ void EqualityExpr::Check() {
     ReportError::IncompatibleOperands(op, l, r);
 }
 
+Type* LogicalExpr::GetType() {
+  Type* r = right->GetType();
+  Type* l = left->GetType();
+
+  if((l->IsEquivalentTo(Type::boolType)) &&
+     (r->IsEquivalentTo(Type::boolType)) )
+    return Type::boolType;
+  return Type::errorType;
+}
+
 void LogicalExpr::Check() {
   Type* r = right->GetType();
   Type* l = left->GetType();
 
-  if(!(l->IsEquivalentTo(r)) ||
-     !(l->IsEquivalentTo(Type::boolType)) ||
+  if(!(l->IsEquivalentTo(Type::boolType)) ||
      !(r->IsEquivalentTo(Type::boolType)) )
     ReportError::IncompatibleOperands(op, l, r);
 }
