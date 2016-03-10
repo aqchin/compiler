@@ -88,12 +88,50 @@ void FnDecl::Emit() {
     argT.push_back(parTy);
   }
 
-  symtab->appendScope();
-  //int i;
-  //for(i = 0; i < formals->NumElements(); i++) {
-    //symtab->curScope()->insert(formals->Nth(i)->GetId()->GetName(), formals->Nth(i));
-  //}
+  llvm::ArrayRef<llvm::Type*> argR(argT);
+  llvm::FunctionType *funTy = llvm::FunctionType::get(ty,argR,false);
 
-  if(body) body->Emit();
+  llvm::Function *funct = llvm::cast<llvm::Function>(
+  irgen->GetOrCreateModule("")->getOrInsertFunction(
+  llvm::StringRef::StringRef(this->id->GetName()),funTy));
+
+  irgen->SetFunction(funct);
+
+  llvm::Function::arg_iterator argIter = funct->arg_begin();
+  for(int i = 0; i < formals->NumElements(); i++) {
+    argIter->setName(formals->Nth(i)->GetID()->GetName());
+    ++argIter;
+  }
+
+  //irgen->SetFunction(funct);
+  llvm::LLVMContext *cont = irgen->GetContext();
+  llvm::BasicBlock *bb = llvm::BasicBlock::Create(*cont,"entry",funct);
+  irgen->SetBasicBlock(bb);
+
+  symtab->appendScope();
+
+  
+  llvm::Function::arg_iterator locIter = funct->arg_begin();
+  int i;
+  for(i = 0; i < formals->NumElements(); i++) {
+    llvm::Type *locT = irgen->GetIntType();
+    if(formals->Nth(i)->GetType() == Type::floatType)
+      locT = irgen->GetFloatType();
+    else if(formals->Nth(i)->GetType() == Type::boolType)
+      locT = irgen->GetBoolType();
+
+    llvm::Twine *locN = new llvm::Twine::Twine(formals->Nth(i)->GetID()->GetName());
+
+    llvm::AllocaInst *locAllo = new llvm::AllocaInst(locT,*locN,
+    irgen->GetBasicBlock());
+
+    symtab->curScope()->insert(formals->Nth(i)->GetID()->GetName(),locAllo);
+    new llvm::StoreInst(locIter,locAllo,irgen->GetBasicBlock());
+
+    ++locIter;
+  }
+
+  if(body) 
+    body->Emit();
   symtab->removeScope();
 }

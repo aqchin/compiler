@@ -50,6 +50,7 @@ class VarDecl : public Decl
     void PrintChildren(int indentLevel);
 
     Type* GetType() { return type; }
+    Identifier* GetID() { return id; }
     void Emit();
 };
 
