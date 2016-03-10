@@ -10,6 +10,7 @@
 
 //List<Symbol*> *Node::st_list = new List<Symbol*>();
 SymTab *Node::symtab = new SymTab();
+IRGenerator *Node::irgen = new IRGenerator();
 
 Node::Node(yyltype loc) {
     location = new yyltype(loc);

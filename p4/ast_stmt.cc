@@ -28,8 +28,8 @@ void Program::Emit() {
     // You can use this as a template and create Emit() function
     // for individual node to fill in the module structure and instructions.
     //
-    IRGenerator irgen;
-    llvm::Module *mod = irgen.GetOrCreateModule("foo.bc");
+    //IRGenerator irgen;
+    llvm::Module *mod = irgen->GetOrCreateModule("foo.bc");
 
     symtab->appendScope();
 
@@ -39,7 +39,7 @@ void Program::Emit() {
 
     // create a function signature
     std::vector<llvm::Type *> argTypes;
-    llvm::Type *intTy = irgen.GetIntType();
+    llvm::Type *intTy = irgen->GetIntType();
     argTypes.push_back(intTy);
     llvm::ArrayRef<llvm::Type *> argArray(argTypes);
     llvm::FunctionType *funcTy = llvm::FunctionType::get(intTy, argArray, false);
@@ -50,7 +50,7 @@ void Program::Emit() {
     arg->setName("x");
 
     // insert a block into the runction
-    llvm::LLVMContext *context = irgen.GetContext();
+    llvm::LLVMContext *context = irgen->GetContext();
     llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", f);
 
     // create a return instruction

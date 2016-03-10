@@ -25,6 +25,21 @@ void VarDecl::PrintChildren(int indentLevel) {
 
 void VarDecl::Emit() {
   //symtab->curScope()->insert(this->id->GetName(), (Node*)this);
+  
+  llvm::Type *ty = irgen->GetIntType();
+  if(type == Type::floatType)
+    ty = irgen->GetFloatType();
+  else if(type == Type::boolType)
+    ty = irgen->GetBoolType();
+  
+  llvm::Twine *varN = new llvm::Twine::Twine(this->id->GetName());
+
+  llvm::GlobalVariable *gvar = new llvm::GlobalVariable(
+    *(irgen->GetOrCreateModule("")),ty,false,llvm::GlobalValue::ExternalLinkage,
+    llvm::Constant::getNullValue(ty),*varN,NULL);
+  
+  symtab->gScope()->insert(this->id->GetName(),gvar);
+
 }
 
 FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {
