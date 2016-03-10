@@ -34,7 +34,8 @@ class Decl : public Node
     Decl(Identifier *name);
     Identifier *GetIdentifier() const { return id; }
 
-    //virtual void Emit() = 0;
+    Identifier* GetId() { return id; }
+    virtual void Emit() = 0;
 };
 
 class VarDecl : public Decl 

@@ -39,6 +39,10 @@ void VarExpr::PrintChildren(int indentLevel) {
     id->Print(indentLevel+1);
 }
 
+void VarExpr::Emit() {
+
+}
+
 Operator::Operator(yyltype loc, const char *tok) : Node(loc) {
     Assert(tok != NULL);
     strncpy(tokenString, tok, sizeof(tokenString));
@@ -76,7 +80,30 @@ void CompoundExpr::PrintChildren(int indentLevel) {
    op->Print(indentLevel+1);
    if (right) right->Print(indentLevel+1);
 }
-   
+
+void ArithmeticExpr::Emit() {
+
+}
+
+void RelationalExpr::Emit() {
+
+}
+
+void EqualityExpr::Emit() {
+
+}
+
+void LogicalExpr::Emit() {
+
+}
+
+void AssignExpr::Emit() {
+
+}
+
+void PostfixExpr::Emit() {
+
+}
   
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
     (base=b)->SetParent(this); 
@@ -101,6 +128,10 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
     if (base) base->Print(indentLevel+1);
     field->Print(indentLevel+1);
   }
+
+void FieldAccess::Emit() {
+
+}
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
     Assert(f != NULL && a != NULL); // b can be be NULL (just means no explicit base)
