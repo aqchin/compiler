@@ -33,6 +33,8 @@ class Decl : public Node
     Decl() : id(NULL) {}
     Decl(Identifier *name);
     Identifier *GetIdentifier() const { return id; }
+
+    //virtual void Emit() = 0;
 };
 
 class VarDecl : public Decl 
@@ -45,6 +47,9 @@ class VarDecl : public Decl
     VarDecl(Identifier *name, Type *type);
     const char *GetPrintNameForNode() { return "VarDecl"; }
     void PrintChildren(int indentLevel);
+
+    Type* GetType() { return type; }
+    void Emit();
 };
 
 class VarDeclError : public VarDecl
@@ -52,6 +57,8 @@ class VarDeclError : public VarDecl
   public:
     VarDeclError() : VarDecl() { yyerror(this->GetPrintNameForNode()); };
     const char *GetPrintNameForNode() { return "VarDeclError"; }
+
+    void Emit() {}
 };
 
 class FnDecl : public Decl 
@@ -67,6 +74,8 @@ class FnDecl : public Decl
     void SetFunctionBody(Stmt *b);
     const char *GetPrintNameForNode() { return "FnDecl"; }
     void PrintChildren(int indentLevel);
+
+    void Emit();
 };
 
 class FormalsError : public FnDecl
@@ -74,6 +83,8 @@ class FormalsError : public FnDecl
   public:
     FormalsError() : FnDecl() { yyerror(this->GetPrintNameForNode()); }
     const char *GetPrintNameForNode() { return "FormalsError"; }
+
+    void Emit() {}
 };
 
 #endif

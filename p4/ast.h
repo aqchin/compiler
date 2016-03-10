@@ -38,6 +38,35 @@
 
 #include <stdlib.h>   // for NULL
 #include "location.h"
+#include <iostream>
+
+#include "list.h"
+#include <map>
+#include <string.h>
+
+using namespace std;
+
+class Symbol {
+  protected:
+    map<string, Node*> st_map;
+
+  public:
+    Symbol() {}
+    void insert(char*, Node*);
+    Node* lookup(char*) const;
+    bool exists(char*) const;
+};
+
+class SymTab {
+  protected:
+    List<Symbol*> *st_list;
+  
+  public:
+    SymTab() {}
+    Symbol* curScope(){ return st_list->Nth(st_list->NumElements()-1); }
+    void appendScope() { st_list->Append(new Symbol()); }
+    void removeScope() { st_list->RemoveAt(st_list->NumElements()-1); }
+};
 
 class Node  {
   protected:
@@ -45,6 +74,9 @@ class Node  {
     Node *parent;
 
   public:
+    //static List<Symbol*> *st_list;
+    static SymTab* symtab;
+
     Node(yyltype loc);
     Node();
     virtual ~Node() {}
