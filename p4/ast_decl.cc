@@ -24,7 +24,7 @@ void VarDecl::PrintChildren(int indentLevel) {
 }
 
 void VarDecl::Emit() {
-  symtab->curScope()->insert(this->id->GetName(), (Node*)this);
+  //symtab->curScope()->insert(this->id->GetName(), (Node*)this);
 }
 
 FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {
@@ -46,14 +46,13 @@ void FnDecl::PrintChildren(int indentLevel) {
 }
 
 void FnDecl::Emit() {
-  symtab->curScope()->insert(this->id->GetName(), (Node*)this);
+  //symtab->curScope()->insert(this->id->GetName(), (Node*)this);
 
   symtab->appendScope();
-  int i;
-  for(i = 0; i < formals->NumElements(); i++) {
-    symtab->curScope()->insert(formals->Nth(i)->GetId()->GetName(),
-      formals->Nth(i));
-  }
+  //int i;
+  //for(i = 0; i < formals->NumElements(); i++) {
+    //symtab->curScope()->insert(formals->Nth(i)->GetId()->GetName(), formals->Nth(i));
+  //}
 
   body->Emit();
   symtab->removeScope();

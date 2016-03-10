@@ -49,15 +49,15 @@ void Identifier::PrintChildren(int indentLevel) {
     printf("%s", name);
 }
 
-void Symbol::insert(char* c, Node* n) {
+void Symbol::insert(char* c, llvm::Value* n) {
   string str(c);
   if(exists(c)) {
     st_map.at(str) = n;
   }
-  else st_map.insert(pair<string, Node*>(str, n));
+  else st_map.insert(pair<string, llvm::Value*>(str, n));
 }
 
-Node* Symbol::lookup(char* c) const {
+llvm::Value* Symbol::lookup(char* c) const {
   if(exists(c)) {
     string str(c);
     return st_map.at(str);

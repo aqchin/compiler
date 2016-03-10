@@ -40,6 +40,7 @@
 #include "location.h"
 #include <iostream>
 
+#include "irgen.h"
 #include "list.h"
 #include <map>
 #include <string.h>
@@ -48,12 +49,12 @@ using namespace std;
 
 class Symbol {
   protected:
-    map<string, Node*> st_map;
+    map<string, llvm::Value*> st_map;
 
   public:
     Symbol() {}
-    void insert(char*, Node*);
-    Node* lookup(char*) const;
+    void insert(char*, llvm::Value*);
+    llvm::Value* lookup(char*) const;
     bool exists(char*) const;
 };
 

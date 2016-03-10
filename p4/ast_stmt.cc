@@ -31,6 +31,12 @@ void Program::Emit() {
     IRGenerator irgen;
     llvm::Module *mod = irgen.GetOrCreateModule("foo.bc");
 
+    symtab->appendScope();
+
+    int i;
+    for(i = 0; i < decls->NumElements(); i++)
+      decls->Nth(i)->Emit();
+
     // create a function signature
     std::vector<llvm::Type *> argTypes;
     llvm::Type *intTy = irgen.GetIntType();
@@ -90,7 +96,7 @@ void DeclStmt::PrintChildren(int indentLevel) {
 }
 
 void DeclStmt::Emit() {
-  symtab->curScope()->insert(decl->GetId()->GetName(), (Node*)this);
+  //symtab->curScope()->insert(decl->GetId()->GetName(), (Node*)this);
 }
 
 ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) { 
