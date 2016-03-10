@@ -66,6 +66,7 @@ class SymTab {
     SymTab() {}
     Symbol* curScope(){ return st_list->Nth(st_list->NumElements()-1); }
     Symbol* gScope(){ return st_list->Nth(0); }
+    int curIndex(){ return st_list->NumElements()-1; }
     void appendScope() { st_list->Append(new Symbol()); }
     void removeScope() { st_list->RemoveAt(st_list->NumElements()-1); }
 };

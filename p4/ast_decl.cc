@@ -5,6 +5,7 @@
 #include "ast_decl.h"
 #include "ast_type.h"
 #include "ast_stmt.h"
+#include <vector>
         
          
 Decl::Decl(Identifier *n) : Node(*n->GetLocation()) {
@@ -27,19 +28,25 @@ void VarDecl::Emit() {
   //symtab->curScope()->insert(this->id->GetName(), (Node*)this);
   
   llvm::Type *ty = irgen->GetIntType();
-  if(type == Type::floatType)
+  if(this->type == Type::floatType)
     ty = irgen->GetFloatType();
-  else if(type == Type::boolType)
+  else if(this->type == Type::boolType)
     ty = irgen->GetBoolType();
   
   llvm::Twine *varN = new llvm::Twine::Twine(this->id->GetName());
 
-  llvm::GlobalVariable *gvar = new llvm::GlobalVariable(
+  if(symtab->curIndex() == 0) {
+    llvm::GlobalVariable *gvar = new llvm::GlobalVariable(
     *(irgen->GetOrCreateModule("")),ty,false,llvm::GlobalValue::ExternalLinkage,
     llvm::Constant::getNullValue(ty),*varN,NULL);
-  
-  symtab->gScope()->insert(this->id->GetName(),gvar);
+    
+    symtab->gScope()->insert(this->id->GetName(),gvar);
+  } else {
+    llvm::AllocaInst *allo = new llvm::AllocaInst(ty,*varN,
+    irgen->GetBasicBlock());
 
+    symtab->curScope()->insert(this->id->GetName(),allo);
+  }
 }
 
 FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {
@@ -63,12 +70,30 @@ void FnDecl::PrintChildren(int indentLevel) {
 void FnDecl::Emit() {
   //symtab->curScope()->insert(this->id->GetName(), (Node*)this);
 
+  llvm::Type *ty = irgen->GetIntType();
+  if(this->returnType == Type::floatType)
+    ty = irgen->GetFloatType();
+  else if(this->returnType == Type::boolType)
+    ty = irgen->GetBoolType();
+
+  std::vector<llvm::Type*> argT;
+  for(int i=0; i < formals->NumElements(); i++) {
+    Type *tempT = formals->Nth(i)->GetType();
+    llvm::Type *parTy = irgen->GetIntType();
+    if(tempT == Type::floatType)
+      parTy = irgen->GetFloatType();
+    else if(tempT == Type::boolType)
+      parTy = irgen->GetBoolType();
+
+    argT.push_back(parTy);
+  }
+
   symtab->appendScope();
   //int i;
   //for(i = 0; i < formals->NumElements(); i++) {
     //symtab->curScope()->insert(formals->Nth(i)->GetId()->GetName(), formals->Nth(i));
   //}
 
-  body->Emit();
+  if(body) body->Emit();
   symtab->removeScope();
 }
