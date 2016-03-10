@@ -68,7 +68,16 @@ void StmtBlock::PrintChildren(int indentLevel) {
 }
 
 void StmtBlock::Emit() {
-  
+  int i;
+  for(i = 0; i < stmts->NumElements(); i++) {
+    if(strcmp("StmtBlock", stmts->Nth(i)->GetPrintNameForNode()))
+      stmts->Nth(i)->Emit();
+    else {
+      symtab->appendScope();
+      stmts->Nth(i)->Emit();
+      symtab->removeScope();
+    }
+  }
 }
 
 DeclStmt::DeclStmt(Decl *d) {
@@ -81,7 +90,7 @@ void DeclStmt::PrintChildren(int indentLevel) {
 }
 
 void DeclStmt::Emit() {
-
+  symtab->curScope()->insert(decl->GetId()->GetName(), (Node*)this);
 }
 
 ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) { 
@@ -91,7 +100,8 @@ ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
 }
 
 void ConditionalStmt::Emit() {
-
+  test->Emit();
+  body->Emit();
 }
 
 ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) { 
@@ -111,7 +121,13 @@ void ForStmt::PrintChildren(int indentLevel) {
 }
 
 void ForStmt::Emit() {
+  symtab->appendScope();
 
+  init->Emit();
+  step->Emit();
+  ConditionalStmt::Emit();
+
+  symtab->removeScope();
 }
 
 void WhileStmt::PrintChildren(int indentLevel) {
@@ -120,7 +136,11 @@ void WhileStmt::PrintChildren(int indentLevel) {
 }
 
 void WhileStmt::Emit() {
+  symtab->appendScope();
 
+  ConditionalStmt::Emit();
+
+  symtab->removeScope();
 }
 
 IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) { 
@@ -136,11 +156,12 @@ void IfStmt::PrintChildren(int indentLevel) {
 }
 
 void IfStmt::Emit() {
-
+  ConditionalStmt::Emit();
+  if(elseBody) elseBody->Emit();
 }
 
 void BreakStmt::Emit() {
-
+  
 }
 
 void ContinueStmt::Emit() {
@@ -158,7 +179,7 @@ void ReturnStmt::PrintChildren(int indentLevel) {
 }
 
 void ReturnStmt::Emit() {
-
+  if(expr) expr->Emit();
 }
   
 SwitchLabel::SwitchLabel(Expr *l, Stmt *s) {
@@ -179,7 +200,11 @@ void SwitchLabel::PrintChildren(int indentLevel) {
 }
 
 void SwitchLabel::Emit() {
+  label->Emit();
 
+  symtab->appendScope();
+  stmt->Emit();
+  symtab->removeScope();
 }
 
 SwitchStmt::SwitchStmt(Expr *e, List<Stmt *> *c, Default *d) {
@@ -197,5 +222,13 @@ void SwitchStmt::PrintChildren(int indentLevel) {
 }
 
 void SwitchStmt::Emit() {
+  if(expr) expr->Emit();
 
+  if(cases) {
+    int i;
+    for(i = 0; i < cases->NumElements(); i++)
+      cases->Nth(i)->Emit();
+  }
+
+  if(def) def->Emit();
 }
