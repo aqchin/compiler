@@ -76,12 +76,14 @@ void StmtBlock::PrintChildren(int indentLevel) {
 llvm::Value *StmtBlock::Emit() {
   int i;
   for(i = 0; i < stmts->NumElements(); i++) {
-    if(strcmp("StmtBlock", stmts->Nth(i)->GetPrintNameForNode()))
-      stmts->Nth(i)->Emit();
-    else {
-      symtab->appendScope();
-      stmts->Nth(i)->Emit();
-      symtab->removeScope();
+    if(!(irgen->GetBasicBlock()->getTerminator())) {
+      if(strcmp("StmtBlock", stmts->Nth(i)->GetPrintNameForNode()))
+        stmts->Nth(i)->Emit();
+      else {
+        symtab->appendScope();
+        stmts->Nth(i)->Emit();
+        symtab->removeScope();
+      }
     }
   }
   
@@ -173,8 +175,39 @@ void IfStmt::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *IfStmt::Emit() {
-  ConditionalStmt::Emit();
-  if(elseBody) elseBody->Emit();
+  //ConditionalStmt::Emit();
+  llvm::Value *cond = test->Emit();
+  
+  llvm::LLVMContext *con = irgen->GetContext();
+  llvm::Function *f = irgen->GetFunction();
+  llvm::BasicBlock *footBB = llvm::BasicBlock::Create(*con,"footer",f);
+  llvm::BasicBlock *elseBB = NULL;
+  if(elseBody)
+    elseBB = llvm::BasicBlock::Create(*con,"elseBB",f);
+  llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(*con,"thenBB",f);
+  llvm::BasicBlock *curBB = irgen->GetBasicBlock();
+
+  llvm::BranchInst::Create(thenBB,elseBody?elseBB:footBB,cond,curBB);
+
+  symtab->appendScope();
+  irgen->SetBasicBlock(thenBB);
+  body->Emit();
+  if(irgen->GetBasicBlock()->getTerminator() == NULL)
+    new llvm::UnreachableInst(*(irgen->GetContext()),irgen->GetBasicBlock());
+  symtab->removeScope();
+
+  irgen->SetBasicBlock(footBB);
+
+  if(elseBody) {
+    symtab->appendScope();
+    irgen->SetBasicBlock(elseBB);
+    elseBody->Emit();
+    if(irgen->GetBasicBlock()->getTerminator() == NULL)
+      new llvm::UnreachableInst(*(irgen->GetContext()),irgen->GetBasicBlock());
+    symtab->removeScope();
+    irgen->SetBasicBlock(footBB);
+  }
+
   return NULL;
 }
 
@@ -199,7 +232,12 @@ void ReturnStmt::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *ReturnStmt::Emit() {
-  if(expr) expr->Emit();
+  if(expr) {
+    llvm::Value *retV = expr->Emit();
+    llvm::ReturnInst::Create(*(irgen->GetContext()),retV,irgen->GetBasicBlock());
+  } //else {
+    llvm::ReturnInst::Create(*(irgen->GetContext()),irgen->GetBasicBlock());
+  //}
 
   return NULL;
 }
