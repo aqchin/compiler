@@ -321,7 +321,7 @@ void SwitchStmt::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *SwitchStmt::Emit() {
-  llvm::LLVMContext *con = irgen->GetContext();
+  /*llvm::LLVMContext *con = irgen->GetContext();
   llvm::Function *f = irgen->GetFunction();
   llvm::BasicBlock
 
@@ -336,7 +336,7 @@ llvm::Value *SwitchStmt::Emit() {
 
   if(def) def->Emit();
 
-  irgen->SetBasicBlock(footBB);
+  irgen->SetBasicBlock(footBB);*/
 
   return NULL;
 }
