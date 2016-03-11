@@ -275,9 +275,9 @@ llvm::Value *ReturnStmt::Emit() {
   if(expr) {
     llvm::Value *retV = expr->Emit();
     llvm::ReturnInst::Create(*(irgen->GetContext()),retV,irgen->GetBasicBlock());
-  } //else {
+  } else {
     llvm::ReturnInst::Create(*(irgen->GetContext()),irgen->GetBasicBlock());
-  //}
+  }
 
   return NULL;
 }
@@ -324,6 +324,11 @@ void SwitchStmt::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *SwitchStmt::Emit() {
+  /*llvm::LLVMContext *con = irgen->GetContext();
+  llvm::Function *f = irgen->GetFunction();
+  llvm::BasicBlock
+
+
   if(expr) expr->Emit();
 
   if(cases) {
@@ -333,6 +338,8 @@ llvm::Value *SwitchStmt::Emit() {
   }
 
   if(def) def->Emit();
+
+  irgen->SetBasicBlock(footBB);*/
 
   return NULL;
 }
