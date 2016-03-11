@@ -312,7 +312,64 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
   }
 
 llvm::Value* FieldAccess::Emit() {
-  return NULL;
+  char* swizzle = field->GetName();
+  llvm::Value *b = base->Emit();
+  const int len = strlen(swizzle);
+  llvm::Value *ret = NULL;
+
+  if(len == 1) {
+    int ind;
+    switch(swizzle[0]) {
+      case 'x':
+        ind = 0;
+        break;
+      case 'y':
+        ind = 1;
+        break;
+      case 'z':
+        ind = 2;
+        break;
+      case 'w':
+        ind = 3;
+        break;
+      default:
+        ind = 0;
+	break;
+    }
+    llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), ind);
+    ret = llvm::ExtractElementInst::Create(b, swizzle_ind, "", irgen->GetBasicBlock());
+
+  } else {
+    vector<llvm::Constant*> mask_ind;
+
+    int i;
+    for(i = 0; i < len; i++) {
+      int ind;
+      switch(swizzle[i]) {
+        case 'x':
+	  ind = 0;
+	  break;
+	case 'y':
+	  ind = 1;
+	  break;
+	case 'z':
+	  ind = 2;
+	  break;
+	case 'w':
+	  ind = 3;
+	  break;
+	default:
+	  ind = 0;
+	  break;
+      }
+      llvm::Constant *new_ind = llvm::ConstantInt::get(irgen->GetIntType(), ind);
+      mask_ind.push_back(new_ind);
+    }
+    llvm::Constant *mask = llvm::ConstantVector::get(mask_ind);
+    ret = new llvm::ShuffleVectorInst(b, llvm::UndefValue::get(b->getType()), mask, "", irgen->GetBasicBlock());
+  }
+  
+  return ret;
 }
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
