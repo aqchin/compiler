@@ -58,6 +58,8 @@ void Program::Emit() {
     llvm::Value *sum = llvm::BinaryOperator::CreateAdd(arg, val, "", bb);
     llvm::ReturnInst::Create(*context, sum, bb);*/
 
+    mod->dump();
+
     // write the BC into standard output
     llvm::WriteBitcodeToFile(mod, llvm::outs());
 }
@@ -173,13 +175,28 @@ void WhileStmt::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *WhileStmt::Emit() {
+  llvm::LLVMContext *con = irgen->GetContext();
+  llvm::Function *f = irgen->GetFunction();
+  llvm::BasicBlock *footBB = llvm::BasicBlock::Create(*con,"footer",f);
+  llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*con,"bodyBB",f);
+  llvm::BasicBlock *headBB = llvm::BasicBlock::Create(*con,"header",f);
+  
+  llvm::BranchInst::Create(headBB, irgen->GetBasicBlock());
+  irgen->SetBasicBlock(headBB);
+  llvm::Value *cond = test->Emit();
+
+  llvm::BranchInst::Create(bodyBB,footBB,cond,headBB);
+
   symtab->appendScope();
-
-  ConditionalStmt::Emit();
-
+  irgen->SetBasicBlock(bodyBB);
+  body->Emit();
+  if(bodyBB->getTerminator() == NULL)
+    llvm::BranchInst::Create(headBB,bodyBB);
   symtab->removeScope();
 
-  return NULL;
+  irgen->SetBasicBlock(footBB);
+
+  return NULL;  
 }
 
 IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) { 
