@@ -140,6 +140,8 @@ void FnDecl::Emit() {
     ++locIter;
   }
 
+  if(DEBUG) fprintf(stderr, "Create Function Body\n");
+
   if(body) {
     llvm::BasicBlock *bn = llvm::BasicBlock::Create(*cont,"next",funct);
     llvm::BranchInst::Create(bn,bb);
