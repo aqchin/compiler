@@ -136,13 +136,33 @@ void ForStmt::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *ForStmt::Emit() {
-  symtab->appendScope();
+  llvm::LLVMContext *con = irgen->GetContext();
+  llvm::Function *f = irgen->GetFunction();
+  llvm::BasicBlock *footBB = llvm::BasicBlock::Create(*con,"footer",f);
+  llvm::BasicBlock *stepBB = llvm::BasicBlock::Create(*con,"stepBB",f);
+  llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*con,"bodyBB",f);
+  llvm::BasicBlock *headBB = llvm::BasicBlock::Create(*con,"header",f);
 
   init->Emit();
-  step->Emit();
-  ConditionalStmt::Emit();
 
+  llvm::BranchInst::Create(headBB, irgen->GetBasicBlock());
+  irgen->SetBasicBlock(headBB);
+  llvm::Value *cond = test->Emit();
+
+  llvm::BranchInst::Create(bodyBB,footBB,cond,headBB);
+
+  symtab->appendScope();
+  irgen->SetBasicBlock(bodyBB);
+  body->Emit();
+  if(bodyBB->getTerminator() == NULL)
+    llvm::BranchInst::Create(stepBB,bodyBB);
   symtab->removeScope();
+
+  irgen->SetBasicBlock(stepBB);
+  step->Emit();
+  llvm::BranchInst::Create(headBB,stepBB);
+
+  irgen->SetBasicBlock(footBB);
 
   return NULL;
 }
