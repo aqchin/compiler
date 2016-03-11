@@ -140,8 +140,12 @@ void FnDecl::Emit() {
     ++locIter;
   }
 
-  if(body) 
+  if(body) {
+    llvm::BasicBlock *bn = llvm::BasicBlock::Create(*cont,"next",funct);
+    llvm::BranchInst::Create(bn,bb);
+    irgen->SetBasicBlock(bn);
     body->Emit();
+  }
   symtab->removeScope();
 
   if(irgen->GetBasicBlock()->getTerminator() == NULL) {

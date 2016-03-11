@@ -58,7 +58,7 @@ void Program::Emit() {
     llvm::Value *sum = llvm::BinaryOperator::CreateAdd(arg, val, "", bb);
     llvm::ReturnInst::Create(*context, sum, bb);*/
 
-    //mod->dump();
+    mod->dump();
 
     // write the BC into standard output
     llvm::WriteBitcodeToFile(mod, llvm::outs());
