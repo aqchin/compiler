@@ -17,7 +17,7 @@ void IntConstant::PrintChildren(int indentLevel) {
 }
 
 llvm::Value* IntConstant::Emit() {
-  return NULL;
+  return llvm::ConstantInt::get(irgen->GetIntType(), value);
 }
 
 FloatConstant::FloatConstant(yyltype loc, double val) : Expr(loc) {
@@ -28,7 +28,7 @@ void FloatConstant::PrintChildren(int indentLevel) {
 }
 
 llvm::Value* FloatConstant::Emit() {
-  return NULL;
+  return llvm::ConstantFP::get(irgen->GetFloatType(), value);
 }
 
 BoolConstant::BoolConstant(yyltype loc, bool val) : Expr(loc) {
@@ -39,7 +39,7 @@ void BoolConstant::PrintChildren(int indentLevel) {
 }
 
 llvm::Value* BoolConstant::Emit() {
-  return NULL;
+  return llvm::ConstantInt::get(irgen->GetBoolType(), value);
 }
 
 VarExpr::VarExpr(yyltype loc, Identifier *ident) : Expr(loc) {
