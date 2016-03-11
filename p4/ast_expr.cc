@@ -231,6 +231,8 @@ llvm::Value* AssignExpr::Emit() {
   VarExpr* l_var = dynamic_cast<VarExpr*>(left);
   llvm::Value *l_addr = l_var->EmitAddress();
   llvm::Value *r = right->Emit();
+  if(dynamic_cast<llvm::StoreInst*>(r))
+    r = ((llvm::StoreInst*)r)->getValueOperand();
   llvm::Value *l;
   llvm::Value *ret = NULL;
 

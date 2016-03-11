@@ -118,6 +118,7 @@ ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
 }
 
 llvm::Value *ConditionalStmt::Emit() {
+  if(DEBUG) fprintf(stderr, "Wrong Emit, ConditionalStmt?\n");
   test->Emit();
   body->Emit();
 
@@ -141,6 +142,8 @@ void ForStmt::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *ForStmt::Emit() {
+  if(DEBUG) fprintf(stderr, "ForStmt start\n");
+
   llvm::LLVMContext *con = irgen->GetContext();
   llvm::Function *f = irgen->GetFunction();
   llvm::BasicBlock *footBB = llvm::BasicBlock::Create(*con,"footer",f);
@@ -148,19 +151,28 @@ llvm::Value *ForStmt::Emit() {
   llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*con,"bodyBB",f);
   llvm::BasicBlock *headBB = llvm::BasicBlock::Create(*con,"header",f);
 
+  if(DEBUG) fprintf(stderr, "ForStmt BB created\n");
+
   init->Emit();
+
+  if(DEBUG) fprintf(stderr, "ForStmt Init Emitted\n");
 
   llvm::BranchInst::Create(headBB, irgen->GetBasicBlock());
   irgen->SetBasicBlock(headBB);
   llvm::Value *cond = test->Emit();
 
+  if(DEBUG) fprintf(stderr, "headBB branch Created\n");
+
   llvm::BranchInst::Create(bodyBB,footBB,cond,headBB);
+
+  if(DEBUG) fprintf(stderr, "ForStmt cond branch created\n");
 
   symtab->appendScope();
   irgen->SetBasicBlock(bodyBB);
   body->Emit();
   if(bodyBB->getTerminator() == NULL)
     llvm::BranchInst::Create(stepBB,bodyBB);
+  if(DEBUG) fprintf(stderr, "ForStmt: in Body\n");
   symtab->removeScope();
 
   irgen->SetBasicBlock(stepBB);
