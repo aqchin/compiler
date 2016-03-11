@@ -33,7 +33,7 @@ void VarDecl::Emit() {
   else if(this->type == Type::boolType)
     ty = irgen->GetBoolType();
   
-  llvm::Twine *varN = new llvm::Twine::Twine(this->id->GetName());
+  llvm::Twine *varN = new llvm::Twine(this->id->GetName());
 
   if(symtab->curIndex() == 0) {
     llvm::GlobalVariable *gvar = new llvm::GlobalVariable(
@@ -93,7 +93,7 @@ void FnDecl::Emit() {
 
   llvm::Function *funct = llvm::cast<llvm::Function>(
   irgen->GetOrCreateModule("")->getOrInsertFunction(
-  llvm::StringRef::StringRef(this->id->GetName()),funTy));
+  llvm::StringRef(this->id->GetName()),funTy));
 
   irgen->SetFunction(funct);
 
@@ -120,7 +120,7 @@ void FnDecl::Emit() {
     else if(formals->Nth(i)->GetType() == Type::boolType)
       locT = irgen->GetBoolType();
 
-    llvm::Twine *locN = new llvm::Twine::Twine(formals->Nth(i)->GetID()->GetName());
+    llvm::Twine *locN = new llvm::Twine(formals->Nth(i)->GetID()->GetName());
 
     llvm::AllocaInst *locAllo = new llvm::AllocaInst(locT,*locN,
     irgen->GetBasicBlock());
