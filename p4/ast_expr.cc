@@ -16,6 +16,10 @@ void IntConstant::PrintChildren(int indentLevel) {
     printf("%d", value);
 }
 
+llvm::Value* IntConstant::Emit() {
+  return NULL;
+}
+
 FloatConstant::FloatConstant(yyltype loc, double val) : Expr(loc) {
     value = val;
 }
@@ -23,11 +27,19 @@ void FloatConstant::PrintChildren(int indentLevel) {
     printf("%g", value);
 }
 
+llvm::Value* FloatConstant::Emit() {
+  return NULL;
+}
+
 BoolConstant::BoolConstant(yyltype loc, bool val) : Expr(loc) {
     value = val;
 }
 void BoolConstant::PrintChildren(int indentLevel) { 
     printf("%s", value ? "true" : "false");
+}
+
+llvm::Value* BoolConstant::Emit() {
+  return NULL;
 }
 
 VarExpr::VarExpr(yyltype loc, Identifier *ident) : Expr(loc) {
@@ -39,8 +51,23 @@ void VarExpr::PrintChildren(int indentLevel) {
     id->Print(indentLevel+1);
 }
 
-void VarExpr::Emit() {
+llvm::Value* VarExpr::Emit() {
+  llvm::Value *mem = NULL;
 
+  int i;
+  for(i = symtab->curIndex(); i >= 0; i--) {
+    mem = symtab->at(i)->lookup(this->id->GetName());
+    if(mem) break;
+  }
+
+  llvm::Twine *tw = new llvm::Twine(this->id->GetName());
+  llvm::Value *ret = new llvm::LoadInst(mem, *tw, irgen->GetBasicBlock());
+
+  return ret;
+}
+
+llvm::Value* VarExpr::EmitAddress(llvm::Value* val) {
+  return NULL;
 }
 
 Operator::Operator(yyltype loc, const char *tok) : Node(loc) {
@@ -81,28 +108,28 @@ void CompoundExpr::PrintChildren(int indentLevel) {
    if (right) right->Print(indentLevel+1);
 }
 
-void ArithmeticExpr::Emit() {
-
+llvm::Value* ArithmeticExpr::Emit() {
+  return NULL;
 }
 
-void RelationalExpr::Emit() {
-
+llvm::Value* RelationalExpr::Emit() {
+  return NULL;
 }
 
-void EqualityExpr::Emit() {
-
+llvm::Value* EqualityExpr::Emit() {
+  return NULL;
 }
 
-void LogicalExpr::Emit() {
-
+llvm::Value* LogicalExpr::Emit() {
+  return NULL;
 }
 
-void AssignExpr::Emit() {
-
+llvm::Value* AssignExpr::Emit() {
+  return NULL;
 }
 
-void PostfixExpr::Emit() {
-
+llvm::Value* PostfixExpr::Emit() {
+  return NULL;
 }
   
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {
@@ -129,8 +156,8 @@ FieldAccess::FieldAccess(Expr *b, Identifier *f)
     field->Print(indentLevel+1);
   }
 
-void FieldAccess::Emit() {
-
+llvm::Value* FieldAccess::Emit() {
+  return NULL;
 }
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {
