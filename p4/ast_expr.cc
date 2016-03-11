@@ -161,7 +161,7 @@ llvm::Value* RelationalExpr::Emit() {
 
   bool FTy = (ty == (llvm::Type*)irgen->GetFloatType());
   llvm::CmpInst::OtherOps o = FTy ? llvm::CmpInst::FCmp : llvm::CmpInst::ICmp;
-  llvm::CmpInst::Predicate p;
+  llvm::CmpInst::Predicate p = llvm::CmpInst::FCMP_FALSE;
 
   string str = op->toString();
   if(!str.compare("<"))
@@ -186,7 +186,7 @@ llvm::Value* EqualityExpr::Emit() {
 
   bool FTy = (ty == (llvm::Type*)irgen->GetFloatType());
   llvm::CmpInst::OtherOps o = FTy ? llvm::CmpInst::FCmp : llvm::CmpInst::ICmp;
-  llvm::CmpInst::Predicate p;
+  llvm::CmpInst::Predicate p = llvm::CmpInst::FCMP_FALSE;
 
   string str = op->toString();
   if(!str.compare("=="))

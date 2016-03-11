@@ -24,13 +24,17 @@ for file in $LIST; do
 		exit 1
 	fi
 
-	tmp=${TMP:-"tmp"}/check.tmp
-	./glc < $base.$ext 1>$tmp 2>&1
-
+	tmp=foo.bc
+	dat=foo.dat
+	out=foo.out
+	cp -f $base.dat $dat
 	printf "Checking %-27s: " $file
-	if ! cmp -s $tmp $file; then
+	./glc < $base.$ext > $tmp 2>&1
+	./gli $tmp > $out
+
+	if ! cmp -s $out $file; then
 		echo "FAIL <--"
-		diff $tmp $file
+		diff $out $file
 	else
 		echo "PASS"
 	fi

@@ -45,6 +45,8 @@
 #include <map>
 #include <string.h>
 
+#define DEBUG false
+
 using namespace std;
 
 class Symbol {
@@ -63,7 +65,7 @@ class SymTab {
     List<Symbol*> *st_list;
   
   public:
-    SymTab() {}
+    SymTab() { st_list = new List<Symbol*>(); }
     Symbol* curScope(){ return st_list->Nth(st_list->NumElements()-1); }
     Symbol* gScope(){ return st_list->Nth(0); }
     Symbol* at(int i) { return st_list->Nth(i); }

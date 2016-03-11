@@ -30,12 +30,15 @@ void Program::Emit() {
     //
     //IRGenerator irgen;
     llvm::Module *mod = irgen->GetOrCreateModule("foo.bc");
+    if(DEBUG) fprintf(stderr, "module foo.bc created\n");
 
     symtab->appendScope();
+    if(DEBUG) fprintf(stderr, "global scope added\n");
 
     int i;
     for(i = 0; i < decls->NumElements(); i++)
       decls->Nth(i)->Emit();
+    if(DEBUG) fprintf(stderr, "finished looping decls\n");
 
     // create a function signature
     /*std::vector<llvm::Type *> argTypes;
