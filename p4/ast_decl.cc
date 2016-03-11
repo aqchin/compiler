@@ -27,8 +27,10 @@ void VarDecl::PrintChildren(int indentLevel) {
 void VarDecl::Emit() {
   //symtab->curScope()->insert(this->id->GetName(), (Node*)this);
   
-  llvm::Type *ty = irgen->GetIntType();
-  if(this->type == Type::floatType)
+  llvm::Type *ty = llvm::Type::getVoidTy(*(irgen->GetContext()));
+  if(this->type == Type::intType)
+    ty = irgen->GetIntType();
+  else if(this->type == Type::floatType)
     ty = irgen->GetFloatType();
   else if(this->type == Type::boolType)
     ty = irgen->GetBoolType();
@@ -70,8 +72,10 @@ void FnDecl::PrintChildren(int indentLevel) {
 void FnDecl::Emit() {
   //symtab->curScope()->insert(this->id->GetName(), (Node*)this);
 
-  llvm::Type *ty = irgen->GetIntType();
-  if(this->returnType == Type::floatType)
+  llvm::Type *ty = llvm::Type::getVoidTy(*(irgen->GetContext()));
+  if(this->returnType == Type::intType)
+    ty = irgen->GetIntType();
+  else if(this->returnType == Type::floatType)
     ty = irgen->GetFloatType();
   else if(this->returnType == Type::boolType)
     ty = irgen->GetBoolType();
@@ -79,8 +83,11 @@ void FnDecl::Emit() {
   std::vector<llvm::Type*> argT;
   for(int i=0; i < formals->NumElements(); i++) {
     Type *tempT = formals->Nth(i)->GetType();
-    llvm::Type *parTy = irgen->GetIntType();
-    if(tempT == Type::floatType)
+
+    llvm::Type *parTy = llvm::Type::getVoidTy(*(irgen->GetContext()));
+    if(tempT == Type::intType)
+      parTy = irgen->GetIntType();
+    else if(tempT == Type::floatType)
       parTy = irgen->GetFloatType();
     else if(tempT == Type::boolType)
       parTy = irgen->GetBoolType();
@@ -114,8 +121,10 @@ void FnDecl::Emit() {
   llvm::Function::arg_iterator locIter = funct->arg_begin();
   int i;
   for(i = 0; i < formals->NumElements(); i++) {
-    llvm::Type *locT = irgen->GetIntType();
-    if(formals->Nth(i)->GetType() == Type::floatType)
+    llvm::Type *locT = llvm::Type::getVoidTy(*(irgen->GetContext()));
+    if(formals->Nth(i)->GetType() == Type::intType)
+      locT = irgen->GetIntType();
+    else if(formals->Nth(i)->GetType() == Type::floatType)
       locT = irgen->GetFloatType();
     else if(formals->Nth(i)->GetType() == Type::boolType)
       locT = irgen->GetBoolType();
@@ -134,4 +143,10 @@ void FnDecl::Emit() {
   if(body) 
     body->Emit();
   symtab->removeScope();
+
+  if(irgen->GetBasicBlock()->getTerminator() == NULL) {
+    new llvm::UnreachableInst(*(irgen->GetContext()),irgen->GetBasicBlock());
+  }
+
+  //symtab->removeScope();
 }

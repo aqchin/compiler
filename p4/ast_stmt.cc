@@ -59,7 +59,7 @@ void Program::Emit() {
     llvm::ReturnInst::Create(*context, sum, bb);*/
 
     // write the BC into standard output
-    //llvm::WriteBitcodeToFile(mod, llvm::outs());
+    llvm::WriteBitcodeToFile(mod, llvm::outs());
 }
 
 StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
@@ -73,7 +73,7 @@ void StmtBlock::PrintChildren(int indentLevel) {
     stmts->PrintAll(indentLevel+1);
 }
 
-void StmtBlock::Emit() {
+llvm::Value *StmtBlock::Emit() {
   int i;
   for(i = 0; i < stmts->NumElements(); i++) {
     if(strcmp("StmtBlock", stmts->Nth(i)->GetPrintNameForNode()))
@@ -84,6 +84,8 @@ void StmtBlock::Emit() {
       symtab->removeScope();
     }
   }
+  
+  return NULL;
 }
 
 DeclStmt::DeclStmt(Decl *d) {
@@ -95,8 +97,11 @@ void DeclStmt::PrintChildren(int indentLevel) {
     decl->Print(indentLevel+1);
 }
 
-void DeclStmt::Emit() {
+llvm::Value *DeclStmt::Emit() {
   //symtab->curScope()->insert(decl->GetId()->GetName(), (Node*)this);
+  decl->Emit();
+
+  return NULL;
 }
 
 ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) { 
@@ -105,9 +110,11 @@ ConditionalStmt::ConditionalStmt(Expr *t, Stmt *b) {
     (body=b)->SetParent(this);
 }
 
-void ConditionalStmt::Emit() {
+llvm::Value *ConditionalStmt::Emit() {
   test->Emit();
   body->Emit();
+
+  return NULL;
 }
 
 ForStmt::ForStmt(Expr *i, Expr *t, Expr *s, Stmt *b): LoopStmt(t, b) { 
@@ -126,7 +133,7 @@ void ForStmt::PrintChildren(int indentLevel) {
     body->Print(indentLevel+1, "(body) ");
 }
 
-void ForStmt::Emit() {
+llvm::Value *ForStmt::Emit() {
   symtab->appendScope();
 
   init->Emit();
@@ -134,6 +141,8 @@ void ForStmt::Emit() {
   ConditionalStmt::Emit();
 
   symtab->removeScope();
+
+  return NULL;
 }
 
 void WhileStmt::PrintChildren(int indentLevel) {
@@ -141,12 +150,14 @@ void WhileStmt::PrintChildren(int indentLevel) {
     body->Print(indentLevel+1, "(body) ");
 }
 
-void WhileStmt::Emit() {
+llvm::Value *WhileStmt::Emit() {
   symtab->appendScope();
 
   ConditionalStmt::Emit();
 
   symtab->removeScope();
+
+  return NULL;
 }
 
 IfStmt::IfStmt(Expr *t, Stmt *tb, Stmt *eb): ConditionalStmt(t, tb) { 
@@ -161,17 +172,20 @@ void IfStmt::PrintChildren(int indentLevel) {
     if (elseBody) elseBody->Print(indentLevel+1, "(else) ");
 }
 
-void IfStmt::Emit() {
+llvm::Value *IfStmt::Emit() {
   ConditionalStmt::Emit();
   if(elseBody) elseBody->Emit();
+  return NULL;
 }
 
-void BreakStmt::Emit() {
+llvm::Value *BreakStmt::Emit() {
   
+  return NULL;
 }
 
-void ContinueStmt::Emit() {
+llvm::Value *ContinueStmt::Emit() {
 
+  return NULL;
 }
 
 ReturnStmt::ReturnStmt(yyltype loc, Expr *e) : Stmt(loc) { 
@@ -184,8 +198,10 @@ void ReturnStmt::PrintChildren(int indentLevel) {
       expr->Print(indentLevel+1);
 }
 
-void ReturnStmt::Emit() {
+llvm::Value *ReturnStmt::Emit() {
   if(expr) expr->Emit();
+
+  return NULL;
 }
   
 SwitchLabel::SwitchLabel(Expr *l, Stmt *s) {
@@ -205,12 +221,14 @@ void SwitchLabel::PrintChildren(int indentLevel) {
     if (stmt)  stmt->Print(indentLevel+1);
 }
 
-void SwitchLabel::Emit() {
+llvm::Value *SwitchLabel::Emit() {
   label->Emit();
 
   symtab->appendScope();
   stmt->Emit();
   symtab->removeScope();
+
+  return NULL;
 }
 
 SwitchStmt::SwitchStmt(Expr *e, List<Stmt *> *c, Default *d) {
@@ -227,7 +245,7 @@ void SwitchStmt::PrintChildren(int indentLevel) {
     if (def) def->Print(indentLevel+1);
 }
 
-void SwitchStmt::Emit() {
+llvm::Value *SwitchStmt::Emit() {
   if(expr) expr->Emit();
 
   if(cases) {
@@ -237,4 +255,6 @@ void SwitchStmt::Emit() {
   }
 
   if(def) def->Emit();
+
+  return NULL;
 }
