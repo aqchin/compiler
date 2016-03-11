@@ -66,8 +66,16 @@ llvm::Value* VarExpr::Emit() {
   return ret;
 }
 
-llvm::Value* VarExpr::EmitAddress(llvm::Value* val) {
-  return NULL;
+llvm::Value* VarExpr::EmitAddress() {
+  llvm::Value *mem = NULL;
+
+  int i;
+  for(i = symtab->curIndex(); i >= 0; i--) {
+    mem = symtab->at(i)->lookup(this->id->GetName());
+    if(mem) break;
+  }
+
+  return mem;
 }
 
 Operator::Operator(yyltype loc, const char *tok) : Node(loc) {
@@ -109,27 +117,172 @@ void CompoundExpr::PrintChildren(int indentLevel) {
 }
 
 llvm::Value* ArithmeticExpr::Emit() {
-  return NULL;
+  llvm::Value *l = NULL;
+  llvm::Value *r = right->Emit();
+  llvm::Value *ret = NULL;
+
+  if(left) l = left->Emit();
+
+  string str = op->toString();
+  if(!str.compare("+"))
+    ret = llvm::BinaryOperator::CreateAdd(l, r, "", irgen->GetBasicBlock());
+  
+  else if(!str.compare("-"))
+    ret = llvm::BinaryOperator::CreateSub(l, r, "", irgen->GetBasicBlock());
+
+  else if(!str.compare("*"))
+    ret = llvm::BinaryOperator::CreateMul(l, r, "", irgen->GetBasicBlock());
+
+  else if(!str.compare("/"))
+    ret = llvm::BinaryOperator::CreateUDiv(l, r, "", irgen->GetBasicBlock());
+
+  else if(!str.compare("++")) {
+    llvm::Value *inc = llvm::ConstantInt::get(irgen->GetIntType(), 1);
+    ret = llvm::BinaryOperator::CreateAdd(r, inc, "", irgen->GetBasicBlock());
+
+    VarExpr* r_var = dynamic_cast<VarExpr*>(right);
+    new llvm::StoreInst(ret, r_var->EmitAddress(), irgen->GetBasicBlock());
+
+  } else if(!str.compare("--")) {
+    llvm::Value *dec = llvm::ConstantInt::get(irgen->GetIntType(), 1);
+    ret = llvm::BinaryOperator::CreateSub(r, dec, "", irgen->GetBasicBlock());
+
+    VarExpr* r_var = dynamic_cast<VarExpr*>(right);
+    new llvm::StoreInst(ret, r_var->EmitAddress(), irgen->GetBasicBlock());
+  }
+
+  return ret;
 }
 
 llvm::Value* RelationalExpr::Emit() {
-  return NULL;
+  llvm::Value *l = left->Emit();
+  llvm::Value *r = right->Emit();
+  llvm::Type *ty = l->getType();
+
+  bool FTy = (ty == (llvm::Type*)irgen->GetFloatType());
+  llvm::CmpInst::OtherOps o = FTy ? llvm::CmpInst::FCmp : llvm::CmpInst::ICmp;
+  llvm::CmpInst::Predicate p;
+
+  string str = op->toString();
+  if(!str.compare("<"))
+    p = FTy ? llvm::CmpInst::FCMP_OLT : llvm::ICmpInst::ICMP_SLT;
+  
+  else if(!str.compare(">"))
+    p = FTy ? llvm::CmpInst::FCMP_OGT : llvm::ICmpInst::ICMP_SGT;
+  
+  else if(!str.compare("<="))
+    p = FTy ? llvm::CmpInst::FCMP_OLE : llvm::ICmpInst::ICMP_SLE;
+  
+  else if(!str.compare(">="))
+    p = FTy ? llvm::CmpInst::FCMP_OGE : llvm::ICmpInst::ICMP_SGE;
+  
+  return llvm::CmpInst::Create(o, p, l, r, "", irgen->GetBasicBlock());
 }
 
 llvm::Value* EqualityExpr::Emit() {
-  return NULL;
+  llvm::Value *l = left->Emit();
+  llvm::Value *r = right->Emit();
+  llvm::Type *ty = l->getType();
+
+  bool FTy = (ty == (llvm::Type*)irgen->GetFloatType());
+  llvm::CmpInst::OtherOps o = FTy ? llvm::CmpInst::FCmp : llvm::CmpInst::ICmp;
+  llvm::CmpInst::Predicate p;
+
+  string str = op->toString();
+  if(!str.compare("=="))
+    p = FTy ? llvm::CmpInst::FCMP_OEQ : llvm::ICmpInst::ICMP_EQ;
+
+  else if(!str.compare("!="))
+    p = FTy ? llvm::CmpInst::FCMP_ONE : llvm::ICmpInst::ICMP_NE;
+
+  return llvm::CmpInst::Create(o, p, l, r, "", irgen->GetBasicBlock());
 }
 
 llvm::Value* LogicalExpr::Emit() {
-  return NULL;
+  llvm::Value *l = left->Emit();
+  llvm::Value *r = right->Emit();
+  llvm::Value *ret = NULL;
+
+  bool l_bool = !(((llvm::ConstantInt*)l)->isZero());
+  bool r_bool = !(((llvm::ConstantInt*)r)->isZero());
+
+  string str = op->toString();
+  if(!str.compare("&&")) {
+    if(l_bool && r_bool)
+      ret = l;
+    else if(!l_bool)
+      ret = l;
+    else
+      ret = r;
+  
+  } else if(!str.compare("||")) {
+    if(l_bool)
+      ret = l;
+    else if(r_bool)
+      ret = r;
+    else
+      ret = l;
+  }
+
+  return ret;
 }
 
 llvm::Value* AssignExpr::Emit() {
-  return NULL;
+  VarExpr* l_var = dynamic_cast<VarExpr*>(left);
+  llvm::Value *l_addr = l_var->EmitAddress();
+  llvm::Value *r = right->Emit();
+  llvm::Value *l;
+  llvm::Value *ret = NULL;
+
+  string str = op->toString();
+  if(!str.compare("=")) {
+    ret = new llvm::StoreInst(r, l_addr, irgen->GetBasicBlock());
+  
+  } else if(!str.compare("+=")) {
+    l = left->Emit();
+    llvm::Value *res = llvm::BinaryOperator::CreateAdd(l, r, "", irgen->GetBasicBlock());
+
+    ret = new llvm::StoreInst(res, l_addr, irgen->GetBasicBlock());
+  
+  } else if(!str.compare("-=")) {
+    l = left->Emit();
+    llvm::Value *res = llvm::BinaryOperator::CreateSub(l, r, "", irgen->GetBasicBlock());
+
+    ret = new llvm::StoreInst(res, l_addr, irgen->GetBasicBlock());
+  
+  } else if(!str.compare("*=")) {
+    l = left->Emit();
+    llvm::Value *res = llvm::BinaryOperator::CreateMul(l, r, "", irgen->GetBasicBlock());
+
+    ret = new llvm::StoreInst(res, l_addr, irgen->GetBasicBlock());
+  
+  } else if(!str.compare("/=")) {
+    l = left->Emit();
+    llvm::Value *res = llvm::BinaryOperator::CreateUDiv(l, r, "", irgen->GetBasicBlock());
+
+    ret = new llvm::StoreInst(res, l_addr, irgen->GetBasicBlock());
+  }
+
+  return ret;
 }
 
 llvm::Value* PostfixExpr::Emit() {
-  return NULL;
+  VarExpr* l_var = dynamic_cast<VarExpr*>(left);
+  llvm::Value *l_addr = l_var->EmitAddress();
+  llvm::Value *i = llvm::ConstantInt::get(irgen->GetIntType(), 1);
+  llvm::Value *l = left->Emit();
+  llvm::Value *ret = NULL;
+
+  string str = op->toString();
+  if(!str.compare("++"))
+    ret = llvm::BinaryOperator::CreateAdd(l, i, "", irgen->GetBasicBlock());
+
+  else if(!str.compare("--"))
+    ret = llvm::BinaryOperator::CreateSub(l, i, "", irgen->GetBasicBlock());
+
+  new llvm::StoreInst(ret, l_addr, irgen->GetBasicBlock());
+
+  return ret;
 }
   
 ArrayAccess::ArrayAccess(yyltype loc, Expr *b, Expr *s) : LValue(loc) {

@@ -17,6 +17,8 @@
 #include "ast_stmt.h"
 #include "list.h"
 
+using namespace std;
+
 void yyerror(const char *msg);
 
 class Expr : public Stmt 
@@ -98,7 +100,7 @@ class VarExpr : public Expr
     void PrintChildren(int indentLevel);
 
     llvm::Value* Emit();
-    llvm::Value* EmitAddress(llvm::Value*);
+    llvm::Value* EmitAddress();
 };
 
 class Operator : public Node 
@@ -110,6 +112,8 @@ class Operator : public Node
     Operator(yyltype loc, const char *tok);
     const char *GetPrintNameForNode() { return "Operator"; }
     void PrintChildren(int indentLevel);
+
+    string toString() { return string(tokenString); }
  };
  
 class CompoundExpr : public Expr
