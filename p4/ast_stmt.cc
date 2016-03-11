@@ -38,28 +38,28 @@ void Program::Emit() {
       decls->Nth(i)->Emit();
 
     // create a function signature
-    std::vector<llvm::Type *> argTypes;
+    /*std::vector<llvm::Type *> argTypes;
     llvm::Type *intTy = irgen->GetIntType();
     argTypes.push_back(intTy);
     llvm::ArrayRef<llvm::Type *> argArray(argTypes);
     llvm::FunctionType *funcTy = llvm::FunctionType::get(intTy, argArray, false);
-
+*/
     // llvm::Function *f = llvm::cast<llvm::Function>(mod->getOrInsertFunction("foo", intTy, intTy, (Type *)0));
-    llvm::Function *f = llvm::cast<llvm::Function>(mod->getOrInsertFunction("foo", funcTy));
+    /*llvm::Function *f = llvm::cast<llvm::Function>(mod->getOrInsertFunction("foo", funcTy));
     llvm::Argument *arg = f->arg_begin();
-    arg->setName("x");
+    arg->setName("x");*/
 
     // insert a block into the runction
-    llvm::LLVMContext *context = irgen->GetContext();
-    llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", f);
+    /*llvm::LLVMContext *context = irgen->GetContext();
+    llvm::BasicBlock *bb = llvm::BasicBlock::Create(*context, "entry", f);*/
 
     // create a return instruction
-    llvm::Value *val = llvm::ConstantInt::get(intTy, 1);
+    /*llvm::Value *val = llvm::ConstantInt::get(intTy, 1);
     llvm::Value *sum = llvm::BinaryOperator::CreateAdd(arg, val, "", bb);
-    llvm::ReturnInst::Create(*context, sum, bb);
+    llvm::ReturnInst::Create(*context, sum, bb);*/
 
     // write the BC into standard output
-    llvm::WriteBitcodeToFile(mod, llvm::outs());
+    //llvm::WriteBitcodeToFile(mod, llvm::outs());
 }
 
 StmtBlock::StmtBlock(List<VarDecl*> *d, List<Stmt*> *s) {
