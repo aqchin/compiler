@@ -427,8 +427,9 @@ llvm::Value* AssignExpr::Emit() {
       int i;
       for(i = 0; i < swizzle_len; i++) {
         llvm::Constant *swizzle_ind = l_fa->SwizzleIndex(swizzle[i]);
+	llvm::Constant *vec_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
 	llvm::Value *lhs = llvm::ExtractElementInst::Create(tmp, swizzle_ind, "", irgen->GetBasicBlock());
-	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, vec_ind, "", irgen->GetBasicBlock());
 	llvm::Value *res = llvm::BinaryOperator::CreateFAdd(lhs, rhs, "", irgen->GetBasicBlock());
 
         llvm::InsertElementInst::Create(tmp, res, swizzle_ind, "", irgen->GetBasicBlock());
@@ -448,8 +449,9 @@ llvm::Value* AssignExpr::Emit() {
       int i;
       for(i = 0; i < swizzle_len; i++) {
         llvm::Constant *swizzle_ind = l_fa->SwizzleIndex(swizzle[i]);
+	llvm::Constant *vec_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
 	llvm::Value *lhs = llvm::ExtractElementInst::Create(tmp, swizzle_ind, "", irgen->GetBasicBlock());
-	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, vec_ind, "", irgen->GetBasicBlock());
 	llvm::Value *res = llvm::BinaryOperator::CreateFSub(lhs, rhs, "", irgen->GetBasicBlock());
 
         llvm::InsertElementInst::Create(tmp, res, swizzle_ind, "", irgen->GetBasicBlock());
@@ -469,8 +471,9 @@ llvm::Value* AssignExpr::Emit() {
       int i;
       for(i = 0; i < swizzle_len; i++) {
         llvm::Constant *swizzle_ind = l_fa->SwizzleIndex(swizzle[i]);
+	llvm::Constant *vec_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
 	llvm::Value *lhs = llvm::ExtractElementInst::Create(tmp, swizzle_ind, "", irgen->GetBasicBlock());
-	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, vec_ind, "", irgen->GetBasicBlock());
 	llvm::Value *res = llvm::BinaryOperator::CreateFSub(lhs, rhs, "", irgen->GetBasicBlock());
 
         llvm::InsertElementInst::Create(tmp, res, swizzle_ind, "", irgen->GetBasicBlock());
@@ -490,8 +493,9 @@ llvm::Value* AssignExpr::Emit() {
       int i;
       for(i = 0; i < swizzle_len; i++) {
         llvm::Constant *swizzle_ind = l_fa->SwizzleIndex(swizzle[i]);
+	llvm::Constant *vec_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
 	llvm::Value *lhs = llvm::ExtractElementInst::Create(tmp, swizzle_ind, "", irgen->GetBasicBlock());
-	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, vec_ind, "", irgen->GetBasicBlock());
 	llvm::Value *res = llvm::BinaryOperator::CreateFSub(lhs, rhs, "", irgen->GetBasicBlock());
 
         llvm::InsertElementInst::Create(tmp, res, swizzle_ind, "", irgen->GetBasicBlock());
@@ -510,19 +514,27 @@ llvm::Value* AssignExpr::Emit() {
 }
 
 llvm::Value* PostfixExpr::Emit() {
-  VarExpr* l_var = dynamic_cast<VarExpr*>(left);
-  llvm::Value *l_addr = l_var->EmitAddress();
+  FieldAccess *l_fa = dynamic_cast<FieldAccess*>(left);
+  VarExpr* l_var; // = dynamic_cast<VarExpr*>(left);
+  //llvm::Value *l_addr = l_var->EmitAddress();
   llvm::Value *i = llvm::ConstantInt::get(irgen->GetIntType(), 1);
   llvm::Value *l = left->Emit();
   llvm::Value *ret = NULL;
 
+  if(l_fa) {
+  
+  } else {
+    l_var = dynamic_cast<FieldsAccess*>();
+  }
+
   string str = op->toString();
-  if(!str.compare("++"))
+  if(!str.compare("++")) {
     ret = llvm::BinaryOperator::CreateAdd(l, i, "", irgen->GetBasicBlock());
 
-  else if(!str.compare("--"))
+  } else if(!str.compare("--")) {
     ret = llvm::BinaryOperator::CreateSub(l, i, "", irgen->GetBasicBlock());
 
+  }
   new llvm::StoreInst(ret, l_addr, irgen->GetBasicBlock());
 
   return ret;
@@ -585,27 +597,6 @@ llvm::Value* FieldAccess::Emit() {
 
     int i;
     for(i = 0; i < len; i++) {
-      /*
-      int ind;
-      switch(swizzle[i]) {
-        case 'x':
-	  ind = 0;
-	  break;
-	case 'y':
-	  ind = 1;
-	  break;
-	case 'z':
-	  ind = 2;
-	  break;
-	case 'w':
-	  ind = 3;
-	  break;
-	default:
-	  ind = 0;
-	  break;
-      }
-      llvm::Constant *new_ind = llvm::ConstantInt::get(irgen->GetIntType(), ind);
-      */
       llvm::Constant *new_ind = SwizzleIndex(swizzle[i]);
       mask_ind.push_back(new_ind);
     }
