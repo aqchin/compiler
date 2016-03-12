@@ -11,6 +11,8 @@
 //List<Symbol*> *Node::st_list = new List<Symbol*>();
 SymTab *Node::symtab = new SymTab();
 IRGenerator *Node::irgen = new IRGenerator();
+List<llvm::BasicBlock*> *Node::brstk = new List<llvm::BasicBlock*>();
+List<llvm::BasicBlock*> *Node::contstk = new List<llvm::BasicBlock*>();
 
 Node::Node(yyltype loc) {
     location = new yyltype(loc);
