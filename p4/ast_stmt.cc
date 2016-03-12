@@ -169,9 +169,11 @@ llvm::Value *ForStmt::Emit() {
 
   symtab->appendScope();
   irgen->SetBasicBlock(bodyBB);
+  brstk->Append(footBB);
+  contstk->Append(stepBB);
   body->Emit();
-  if(bodyBB->getTerminator() == NULL)
-    llvm::BranchInst::Create(stepBB,bodyBB);
+  if(irgen->GetBasicBlock()->getTerminator() == NULL)
+    llvm::BranchInst::Create(stepBB,irgen->GetBasicBlock());
   if(DEBUG) fprintf(stderr, "ForStmt: in Body\n");
   symtab->removeScope();
 
@@ -180,6 +182,8 @@ llvm::Value *ForStmt::Emit() {
   llvm::BranchInst::Create(headBB,stepBB);
 
   irgen->SetBasicBlock(footBB);
+  brstk->RemoveAt(brstk->NumElements()-1);
+  contstk->RemoveAt(brstk->NumElements()-1);
 
   return NULL;
 }
@@ -203,6 +207,8 @@ llvm::Value *WhileStmt::Emit() {
   llvm::BranchInst::Create(bodyBB,footBB,cond,headBB);
 
   symtab->appendScope();
+  brstk->Append(footBB);
+  contstk->Append(headBB);
   irgen->SetBasicBlock(bodyBB);
   body->Emit();
   if(bodyBB->getTerminator() == NULL)
@@ -210,6 +216,8 @@ llvm::Value *WhileStmt::Emit() {
   symtab->removeScope();
 
   irgen->SetBasicBlock(footBB);
+  brstk->RemoveAt(brstk->NumElements()-1);
+  contstk->RemoveAt(brstk->NumElements()-1);
 
   return NULL;  
 }
@@ -264,11 +272,15 @@ llvm::Value *IfStmt::Emit() {
 }
 
 llvm::Value *BreakStmt::Emit() {
-  
+  llvm::BranchInst::Create(brstk->Nth(brstk->NumElements()-1),
+  irgen->GetBasicBlock());  
+
   return NULL;
 }
 
 llvm::Value *ContinueStmt::Emit() {
+  llvm::BranchInst::Create(contstk->Nth(contstk->NumElements()-1),
+  irgen->GetBasicBlock());
 
   return NULL;
 }

@@ -27,6 +27,8 @@ void VarDecl::PrintChildren(int indentLevel) {
 void VarDecl::Emit() {
   //symtab->curScope()->insert(this->id->GetName(), (Node*)this);
   
+  if(DEBUG) fprintf(stderr, "VarDecl start\n");
+
   llvm::Type *ty = llvm::Type::getVoidTy(*(irgen->GetContext()));
   if(this->type == Type::intType)
     ty = irgen->GetIntType();
@@ -36,6 +38,8 @@ void VarDecl::Emit() {
     ty = irgen->GetBoolType();
   
   llvm::Twine *varN = new llvm::Twine(this->id->GetName());
+
+  if(DEBUG) fprintf(stderr, "Type and Name Made\n");
 
   if(symtab->curIndex() == 0) {
     llvm::GlobalVariable *gvar = new llvm::GlobalVariable(
@@ -49,6 +53,8 @@ void VarDecl::Emit() {
 
     symtab->curScope()->insert(this->id->GetName(),allo);
   }
+
+  if(DEBUG) fprintf(stderr, "Finish VarDecl\n");
 }
 
 FnDecl::FnDecl(Identifier *n, Type *r, List<VarDecl*> *d) : Decl(n) {

@@ -83,6 +83,8 @@ class Node  {
     //static List<Symbol*> *st_list;
     static SymTab* symtab;
     static IRGenerator* irgen;
+    static List<llvm::BasicBlock*> *brstk;
+    static List<llvm::BasicBlock*> *contstk;
 
     Node(yyltype loc);
     Node();
