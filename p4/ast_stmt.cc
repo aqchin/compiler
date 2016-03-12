@@ -315,11 +315,9 @@ void SwitchLabel::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *SwitchLabel::Emit() {
-  label->Emit();
+  //label->Emit();
 
-  symtab->appendScope();
   stmt->Emit();
-  symtab->removeScope();
 
   return NULL;
 }
@@ -339,34 +337,36 @@ void SwitchStmt::PrintChildren(int indentLevel) {
 }
 
 llvm::Value *SwitchStmt::Emit() {
-  /*int cnum = cases->NumElements // number of cases
+  int cnum = cases->NumElements(); // number of cases
   llvm::LLVMContext *con = irgen->GetContext();
   llvm::Function *f = irgen->GetFunction();
   // empty default case
   llvm::BasicBlock *defBB = llvm::BasicBlock::Create(*con,"defaultBB",f);
+
+  // made footer early for break stack
   llvm::BasicBlock *footBB = llvm::BasicBlock::Create(*con,"footer",f);
+  brstk->push_back(footBB);
 
   // create switch instance
   llvm::SwitchInst *swi = llvm::SwitchInst::Create(expr->Emit(),defBB,cnum,
   irgen->GetBasicBlock());
 
-  brstk->Append(footBB);
 
   for(int i = 0; i < cnum; i++) {
     if(dynamic_cast<Case*>(cases->Nth(i))) {
       llvm::BasicBlock *caseBB = llvm::BasicBlock::Create(*con,"caseBB",f);
-      llvm::Value* cond = dynamic_cast<Case*>(cases->Nth(i))->getLabel()->Emit();
+      llvm::Value* cond = dynamic_cast<Case*>(cases->Nth(i))->caseLabel()->Emit();
       swi->addCase((llvm::ConstantInt*)cond,caseBB);
       if(irgen->GetBasicBlock()->getTerminator() == NULL)
         llvm::BranchInst::Create(caseBB,irgen->GetBasicBlock());
       irgen->SetBasicBlock(caseBB);
-      ((SwitchLabel*)cases->Nth(i))->getStmt()->Emit();
+      ((SwitchLabel*)cases->Nth(i))->Emit();
       
     } else if(dynamic_cast<Default*>(cases->Nth(i))) {
       if(irgen->GetBasicBlock()->getTerminator() == NULL) 
         llvm::BranchInst::Create(defBB,irgen->GetBasicBlock());
       irgen->SetBasicBlock(defBB);
-
+      ((SwitchLabel*)cases->Nth(i))->Emit();
 
     } else {
       cases->Nth(i)->Emit();
@@ -374,16 +374,11 @@ llvm::Value *SwitchStmt::Emit() {
   }
 
   if(defBB->getTerminator() == NULL)
-  
-  if(cases) {
-    int i;
-    for(i = 0; i < cases->NumElements(); i++)
-      cases->Nth(i)->Emit();
-  }
+    llvm::BranchInst::Create(footBB,defBB);
 
-  if(def) def->Emit();
+  brstk->pop_back();
 
-  irgen->SetBasicBlock(footBB);*/
+  irgen->SetBasicBlock(footBB);
 
   return NULL;
 }
