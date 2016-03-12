@@ -1,3 +1,4 @@
+import time
 import os
 from subprocess import *
 
@@ -11,6 +12,7 @@ for _, _, files in os.walk(TEST_DIRECTORY):
     testName = os.path.join(TEST_DIRECTORY, file)
 
     result = Popen('./glc < ' + testName + ' >' +os.path.join('', refName) + '.bc', shell = True, stderr = STDOUT, stdout = PIPE)
+    time.sleep(1);
     result = Popen('llvm-dis ' + os.path.join('', refName) + '.bc', shell = True, stderr = STDOUT, stdout = PIPE)
     result = Popen('./gli ' +  os.path.join('', refName) + '.bc', shell = True, stderr = STDOUT, stdout = PIPE)
 

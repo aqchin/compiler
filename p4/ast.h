@@ -44,6 +44,7 @@
 #include "list.h"
 #include <map>
 #include <string.h>
+#include <vector>
 
 #define DEBUG true
 
@@ -83,8 +84,8 @@ class Node  {
     //static List<Symbol*> *st_list;
     static SymTab* symtab;
     static IRGenerator* irgen;
-    static List<llvm::BasicBlock*> *brstk;
-    static List<llvm::BasicBlock*> *contstk;
+    static std::vector<llvm::BasicBlock*> *brstk;
+    static std::vector<llvm::BasicBlock*> *contstk;
 
     Node(yyltype loc);
     Node();

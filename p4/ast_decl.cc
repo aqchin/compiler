@@ -36,6 +36,12 @@ void VarDecl::Emit() {
     ty = irgen->GetFloatType();
   else if(this->type == Type::boolType)
     ty = irgen->GetBoolType();
+  else if(this->type == Type::vec2Type)
+    ty = irgen->GetVec2Type();
+  else if(this->type == Type::vec3Type)
+    ty = irgen->GetVec3Type();
+  else if(this->type == Type::vec4Type)
+    ty = irgen->GetVec4Type();
   
   llvm::Twine *varN = new llvm::Twine(this->id->GetName());
 
@@ -85,6 +91,12 @@ void FnDecl::Emit() {
     ty = irgen->GetFloatType();
   else if(this->returnType == Type::boolType)
     ty = irgen->GetBoolType();
+  else if(this->returnType == Type::vec2Type)
+    ty = irgen->GetVec2Type();
+  else if(this->returnType == Type::vec3Type)
+    ty = irgen->GetVec3Type();
+  else if(this->returnType == Type::vec4Type)
+    ty = irgen->GetVec4Type();
 
   std::vector<llvm::Type*> argT;
   for(int i=0; i < formals->NumElements(); i++) {
@@ -97,6 +109,12 @@ void FnDecl::Emit() {
       parTy = irgen->GetFloatType();
     else if(tempT == Type::boolType)
       parTy = irgen->GetBoolType();
+    else if(tempT == Type::vec2Type)
+      parTy = irgen->GetVec2Type();
+    else if(tempT == Type::vec3Type)
+      parTy = irgen->GetVec3Type();
+    else if(tempT == Type::vec4Type)
+      parTy = irgen->GetVec4Type();
 
     argT.push_back(parTy);
   }
@@ -134,6 +152,12 @@ void FnDecl::Emit() {
       locT = irgen->GetFloatType();
     else if(formals->Nth(i)->GetType() == Type::boolType)
       locT = irgen->GetBoolType();
+    else if(formals->Nth(i)->GetType() == Type::vec2Type)
+      locT = irgen->GetVec2Type();
+    else if(formals->Nth(i)->GetType() == Type::vec3Type)
+      locT = irgen->GetVec3Type();
+    else if(formals->Nth(i)->GetType() == Type::vec4Type)
+      locT = irgen->GetVec4Type();
 
     llvm::Twine *locN = new llvm::Twine(formals->Nth(i)->GetID()->GetName());
 

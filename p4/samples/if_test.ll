@@ -14,15 +14,15 @@ next:                                             ; preds = %entry
   %0 = fcmp ogt float %a, 1.000000e+00
   br i1 %0, label %thenBB, label %elseBB
 
-footer:                                           ; No predecessors!
+footer:                                           ; preds = %thenBB, %elseBB
   %f1 = load float* %f
   ret float %f1
 
 elseBB:                                           ; preds = %next
   store float 1.000000e+00, float* %f
-  unreachable
+  br label %footer
 
 thenBB:                                           ; preds = %next
   store float 2.000000e+00, float* %f
-  unreachable
+  br label %footer
 }
