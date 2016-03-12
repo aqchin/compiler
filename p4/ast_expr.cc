@@ -117,38 +117,192 @@ void CompoundExpr::PrintChildren(int indentLevel) {
 }
 
 llvm::Value* ArithmeticExpr::Emit() {
+  FieldAccess *r_fa = dynamic_cast<FieldAccess*>(right);
+  FieldAccess *l_fa = NULL;
   llvm::Value *l = NULL;
   llvm::Value *r = right->Emit();
   llvm::Value *ret = NULL;
+  llvm::Type *ty = r->getType();
+  char *l_swizzle = NULL;
+  char *r_swizzle = NULL;
+  int l_swizzle_len = 0;
+  int r_swizzle_len = 0;
 
-  if(left) l = left->Emit();
+  if(r_fa) {
+    r_swizzle = r_fa->GetField()->GetName();
+    r_swizzle_len = strlen(r_swizzle);
+  }
+
+  bool FTy = (ty != (llvm::Type*)irgen->GetIntType());
+
+  if(left) {
+    l = left->Emit();
+    l_fa = dynamic_cast<FieldAccess*>(left);
+    
+    if(l_fa) {
+      l_swizzle = l_fa->GetField()->GetName();
+      l_swizzle_len = strlen(l_swizzle);
+    }
+  }
 
   string str = op->toString();
-  if(!str.compare("+"))
-    ret = llvm::BinaryOperator::CreateAdd(l, r, "", irgen->GetBasicBlock());
+  if(!str.compare("+")) {
+    if(r_fa && !l_fa) {	
+      int i;
+      for(i = 0; i < r_swizzle_len; i++) {
+       llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+       llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+       llvm::Value *res = llvm::BinaryOperator::CreateFAdd(l, rhs, "", irgen->GetBasicBlock());
+
+       llvm::InsertElementInst::Create(r, res, swizzle_ind, "", irgen->GetBasicBlock()); 
+      }
+      ret = r;
+    
+    } else if(!r_fa && l_fa) {
+      int i;
+      for(i = 0; i < l_swizzle_len; i++) {
+        llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+	llvm::Value *lhs = llvm::ExtractElementInst::Create(l, swizzle_ind, "", irgen->GetBasicBlock());
+	llvm::Value *res = llvm::BinaryOperator::CreateFAdd(lhs, r, "", irgen->GetBasicBlock());
+
+	llvm::InsertElementInst::Create(l, res, swizzle_ind, "", irgen->GetBasicBlock());
+      }
+      ret = l;
+    
+    } else {
+      ret = (FTy) ? llvm::BinaryOperator::CreateFAdd(l, r, "", irgen->GetBasicBlock()) : 
+                    llvm::BinaryOperator::CreateAdd(l, r, "", irgen->GetBasicBlock());
+    }
   
-  else if(!str.compare("-"))
-    ret = llvm::BinaryOperator::CreateSub(l, r, "", irgen->GetBasicBlock());
+  } else if(!str.compare("-")) {
+    if(r_fa && !l_fa) {	
+    int i;
+    for(i = 0; i < r_swizzle_len; i++) {
+     llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+     llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+     llvm::Value *res = llvm::BinaryOperator::CreateFSub(l, rhs, "", irgen->GetBasicBlock());
 
-  else if(!str.compare("*"))
-    ret = llvm::BinaryOperator::CreateMul(l, r, "", irgen->GetBasicBlock());
+     llvm::InsertElementInst::Create(r, res, swizzle_ind, "", irgen->GetBasicBlock()); 
+    }
+    ret = r;
+    
+    } else if(!r_fa && l_fa) {
+      int i;
+      for(i = 0; i < l_swizzle_len; i++) {
+        llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+        llvm::Value *lhs = llvm::ExtractElementInst::Create(l, swizzle_ind, "", irgen->GetBasicBlock());
+        llvm::Value *res = llvm::BinaryOperator::CreateFSub(lhs, r, "", irgen->GetBasicBlock());
 
-  else if(!str.compare("/"))
-    ret = llvm::BinaryOperator::CreateUDiv(l, r, "", irgen->GetBasicBlock());
+        llvm::InsertElementInst::Create(l, res, swizzle_ind, "", irgen->GetBasicBlock());
+      }
+      ret = l;
+    
+    } else {
+      ret = (FTy) ? llvm::BinaryOperator::CreateFSub(l, r, "", irgen->GetBasicBlock()) :
+                    llvm::BinaryOperator::CreateSub(l, r, "", irgen->GetBasicBlock());
+    }
 
-  else if(!str.compare("++")) {
-    llvm::Value *inc = llvm::ConstantInt::get(irgen->GetIntType(), 1);
-    ret = llvm::BinaryOperator::CreateAdd(r, inc, "", irgen->GetBasicBlock());
+  } else if(!str.compare("*")) {
+    if(r_fa && !l_fa) {	
+      int i;
+      for(i = 0; i < r_swizzle_len; i++) {
+       llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+       llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+       llvm::Value *res = llvm::BinaryOperator::CreateFMul(l, rhs, "", irgen->GetBasicBlock());
 
-    VarExpr* r_var = dynamic_cast<VarExpr*>(right);
-    new llvm::StoreInst(ret, r_var->EmitAddress(), irgen->GetBasicBlock());
+       llvm::InsertElementInst::Create(r, res, swizzle_ind, "", irgen->GetBasicBlock()); 
+      }
+      ret = r;
+    
+    } else if(!r_fa && l_fa) {
+      int i;
+      for(i = 0; i < l_swizzle_len; i++) {
+        llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+	llvm::Value *lhs = llvm::ExtractElementInst::Create(l, swizzle_ind, "", irgen->GetBasicBlock());
+	llvm::Value *res = llvm::BinaryOperator::CreateFMul(lhs, r, "", irgen->GetBasicBlock());
+
+	llvm::InsertElementInst::Create(l, res, swizzle_ind, "", irgen->GetBasicBlock());
+      }
+      ret = l;
+    
+    } else {
+      ret = (FTy) ? llvm::BinaryOperator::CreateFMul(l, r, "", irgen->GetBasicBlock()) :
+                    llvm::BinaryOperator::CreateMul(l, r, "", irgen->GetBasicBlock());
+    }
+
+  } else if(!str.compare("/")) {
+    if(r_fa && !l_fa) {	
+      int i;
+      for(i = 0; i < r_swizzle_len; i++) {
+       llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+       llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+       llvm::Value *res = llvm::BinaryOperator::CreateFDiv(l, rhs, "", irgen->GetBasicBlock());
+
+       llvm::InsertElementInst::Create(r, res, swizzle_ind, "", irgen->GetBasicBlock()); 
+      }
+      ret = r;
+    
+    } else if(!r_fa && l_fa) {
+      int i;
+      for(i = 0; i < l_swizzle_len; i++) {
+        llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+	llvm::Value *lhs = llvm::ExtractElementInst::Create(l, swizzle_ind, "", irgen->GetBasicBlock());
+	llvm::Value *res = llvm::BinaryOperator::CreateFDiv(lhs, r, "", irgen->GetBasicBlock());
+
+	llvm::InsertElementInst::Create(l, res, swizzle_ind, "", irgen->GetBasicBlock());
+      }
+      ret = l;
+    
+    } else {
+      ret = (FTy) ? llvm::BinaryOperator::CreateFDiv(l, r, "", irgen->GetBasicBlock()) :
+                  llvm::BinaryOperator::CreateUDiv(l, r, "", irgen->GetBasicBlock());
+    }
+
+  } else if(!str.compare("++")) {
+    llvm::Value *inc = (FTy) ? llvm::ConstantFP::get(irgen->GetFloatType(), 1.f) :
+                               llvm::ConstantInt::get(irgen->GetIntType(), 1);
+
+    if(r_fa) {
+      int i;
+      for(i = 0; i < r_swizzle_len; i++) {
+        llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+        llvm::Value *res = llvm::BinaryOperator::CreateFAdd(inc, rhs, "", irgen->GetBasicBlock());
+
+	llvm::InsertElementInst::Create(r, res, swizzle_ind, "", irgen->GetBasicBlock());
+      }
+      ret = r;
+    
+    } else {
+      ret = (FTy) ? llvm::BinaryOperator::CreateFAdd(r, inc, "", irgen->GetBasicBlock()) :
+                    llvm::BinaryOperator::CreateAdd(r, inc, "", irgen->GetBasicBlock());
+
+      VarExpr* r_var = dynamic_cast<VarExpr*>(right);
+      new llvm::StoreInst(ret, r_var->EmitAddress(), irgen->GetBasicBlock());
+    }
 
   } else if(!str.compare("--")) {
-    llvm::Value *dec = llvm::ConstantInt::get(irgen->GetIntType(), 1);
-    ret = llvm::BinaryOperator::CreateSub(r, dec, "", irgen->GetBasicBlock());
+    llvm::Value *dec = (FTy) ? llvm::ConstantFP::get(irgen->GetFloatType(), 1.f) :
+                               llvm::ConstantInt::get(irgen->GetIntType(), 1);
 
-    VarExpr* r_var = dynamic_cast<VarExpr*>(right);
-    new llvm::StoreInst(ret, r_var->EmitAddress(), irgen->GetBasicBlock());
+    if(r_fa) {
+      int i;
+      for(i = 0; i < r_swizzle_len; i++) {
+        llvm::Constant *swizzle_ind = llvm::ConstantInt::get(irgen->GetIntType(), i);
+	llvm::Value *rhs = llvm::ExtractElementInst::Create(r, swizzle_ind, "", irgen->GetBasicBlock());
+        llvm::Value *res = llvm::BinaryOperator::CreateFSub(dec, rhs, "", irgen->GetBasicBlock());
+
+	llvm::InsertElementInst::Create(r, res, swizzle_ind, "", irgen->GetBasicBlock());
+      }
+      ret = r;
+    
+    } else {
+      ret = (FTy) ? llvm::BinaryOperator::CreateFSub(r, dec, "", irgen->GetBasicBlock()) :
+                  llvm::BinaryOperator::CreateSub(r, dec, "", irgen->GetBasicBlock());
+
+      VarExpr* r_var = dynamic_cast<VarExpr*>(right);
+      new llvm::StoreInst(ret, r_var->EmitAddress(), irgen->GetBasicBlock());
+    }
   }
 
   return ret;
