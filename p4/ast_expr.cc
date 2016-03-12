@@ -228,8 +228,22 @@ llvm::Value* LogicalExpr::Emit() {
 }
 
 llvm::Value* AssignExpr::Emit() {
-  VarExpr* l_var = dynamic_cast<VarExpr*>(left);
-  llvm::Value *l_addr = l_var->EmitAddress();
+  FieldAccess *l_fa = dynamic_cast<FieldAccess*>(left);
+  char *swizzle;
+  int swizzle_len = 0;
+  VarExpr *l_var;
+
+  llvm::Value *l_addr;
+  if(l_fa) {
+    l_addr = l_fa->EmitAddress();
+    swizzle = l_fa->GetField()->GetName();
+    swizzle_len = strlen(swizzle);
+  
+  } else {
+    l_var = dynamic_cast<VarExpr*>(left);
+    l_addr = l_var->EmitAddress();
+  }
+
   llvm::Value *r = right->Emit();
   if(dynamic_cast<llvm::StoreInst*>(r))
     r = ((llvm::StoreInst*)r)->getValueOperand();
@@ -238,7 +252,15 @@ llvm::Value* AssignExpr::Emit() {
 
   string str = op->toString();
   if(!str.compare("=")) {
-    ret = new llvm::StoreInst(r, l_addr, irgen->GetBasicBlock());
+    if(l_fa) {
+      llvm::Constant *swizzle_ind = l_fa->SwizzleIndex(swizzle[0]);
+      llvm::Value *tmp = new llvm::LoadInst(l_addr, "", irgen->GetBasicBlock());
+      llvm::InsertElementInst::Create(tmp, r, swizzle_ind, "", irgen->GetBasicBlock());
+      
+      new llvm::StoreInst(tmp, l_addr, "", irgen->GetBasicBlock());
+      ret = r;
+    }
+    else ret = new llvm::StoreInst(r, l_addr, irgen->GetBasicBlock());
   
   } else if(!str.compare("+=")) {
     l = left->Emit();
@@ -344,6 +366,7 @@ llvm::Value* FieldAccess::Emit() {
 
     int i;
     for(i = 0; i < len; i++) {
+      /*
       int ind;
       switch(swizzle[i]) {
         case 'x':
@@ -363,6 +386,8 @@ llvm::Value* FieldAccess::Emit() {
 	  break;
       }
       llvm::Constant *new_ind = llvm::ConstantInt::get(irgen->GetIntType(), ind);
+      */
+      llvm::Constant *new_ind = SwizzleIndex(swizzle[i]);
       mask_ind.push_back(new_ind);
     }
     llvm::Constant *mask = llvm::ConstantVector::get(mask_ind);
@@ -370,6 +395,45 @@ llvm::Value* FieldAccess::Emit() {
   }
   
   return ret;
+}
+
+llvm::Value* FieldAccess::EmitAddress() {
+  llvm::Value *mem = NULL;
+  VarExpr *ve = dynamic_cast<VarExpr*>(base);
+
+  if(ve) {
+    int i;
+    for(i = symtab->curIndex(); i >= 0; i--) {
+      mem = symtab->at(i)->lookup(ve->GetId()->GetName());
+      if(mem) break;
+    }
+  }
+
+  return mem;
+}
+
+llvm::Constant* FieldAccess::SwizzleIndex(char i) {
+  int ind;
+  switch (i) {
+    case 'x':
+      ind = 0;
+      break;
+    case 'y':
+      ind = 1;
+      break;
+    case 'z':
+      ind = 2;
+      break;
+    case 'w':
+      ind = 3;
+      break;
+    default:
+      ind = 0;
+      break;
+    }
+
+    llvm::Constant* ret = llvm::ConstantInt::get(irgen->GetIntType(), ind);
+    return ret;
 }
 
 Call::Call(yyltype loc, Expr *b, Identifier *f, List<Expr*> *a) : Expr(loc)  {

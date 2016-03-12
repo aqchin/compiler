@@ -102,6 +102,7 @@ class VarExpr : public Expr
 
     llvm::Value* Emit();
     llvm::Value* EmitAddress();
+    Identifier* GetId() { return id; }
 };
 
 class Operator : public Node 
@@ -226,6 +227,10 @@ class FieldAccess : public LValue
     void PrintChildren(int indentLevel);
 
     llvm::Value* Emit();
+    llvm::Value* EmitAddress();
+    Identifier *GetField() { return field; }
+    Expr *GetBase() { return base; }
+    llvm::Constant* SwizzleIndex(char);
 };
 
 /* Like field access, call is used both for qualified base.field()
