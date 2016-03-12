@@ -179,6 +179,8 @@ class SwitchLabel : public Stmt
     SwitchLabel(Stmt *stmt);
     void PrintChildren(int indentLevel);
 
+    Expr* caseLabel() { return label; }
+
     llvm::Value *Emit();
 };
 
