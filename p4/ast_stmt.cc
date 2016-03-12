@@ -245,7 +245,7 @@ llvm::Value *IfStmt::Emit() {
   irgen->SetBasicBlock(thenBB);
   body->Emit();
   if(irgen->GetBasicBlock()->getTerminator() == NULL)
-    new llvm::UnreachableInst(*(irgen->GetContext()),irgen->GetBasicBlock());
+    llvm::BranchInst::Create(footBB,irgen->GetBasicBlock());
   symtab->removeScope();
 
   irgen->SetBasicBlock(footBB);
@@ -255,7 +255,7 @@ llvm::Value *IfStmt::Emit() {
     irgen->SetBasicBlock(elseBB);
     elseBody->Emit();
     if(irgen->GetBasicBlock()->getTerminator() == NULL)
-      new llvm::UnreachableInst(*(irgen->GetContext()),irgen->GetBasicBlock());
+      llvm::BranchInst::Create(footBB,irgen->GetBasicBlock());
     symtab->removeScope();
     irgen->SetBasicBlock(footBB);
   }
